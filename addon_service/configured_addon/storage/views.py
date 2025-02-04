@@ -29,13 +29,11 @@ class ConfiguredStorageAddonViewSet(ConfiguredAddonViewSet):
     )
     def get_wb_credentials(self, request, pk=None):
         addon: ConfiguredStorageAddon = self.get_object()
-        token_expiration = (
-            addon.base_account.oauth2_token_metadata.access_token_expiration
-        )
         if (
             addon.external_service.credentials_format is CredentialsFormats.OAUTH2
-            and token_expiration
-            and token_expiration < timezone.now()
+            and addon.base_account.oauth2_token_metadata.access_token_expiration
+            and addon.base_account.oauth2_token_metadata.access_token_expiration
+            < timezone.now()
         ):
             addon.base_account.refresh_oauth_access_token__blocking()
         self.resource_name = "waterbutler-credentials"  # for the jsonapi resource type
