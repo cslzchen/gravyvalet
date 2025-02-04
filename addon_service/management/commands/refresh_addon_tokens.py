@@ -68,4 +68,11 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         fake = options["fake"]
-        refresh_addon_tokens(addons=["box", "googledrive", "mendeley"], fake=fake)
+        refresh_addon_tokens(
+            addons={
+                "box": 60,
+                "googledrive": 14,
+                "mendeley": 14,
+            },
+            fake=fake,
+        )
