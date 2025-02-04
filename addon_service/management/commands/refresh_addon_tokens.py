@@ -44,7 +44,7 @@ def refresh_addon_tokens_for_external_service(
 
             allowance -= 1
             last_call = time.time()
-            account.refresh_oauth_access_token__blocking()
+            account.refresh_oauth_access_token__blocking(force=True)
 
 
 @celery.shared_task

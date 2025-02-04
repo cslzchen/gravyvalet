@@ -1,6 +1,5 @@
 from http import HTTPMethod
 
-from django.utils import timezone
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -29,12 +28,7 @@ class ConfiguredStorageAddonViewSet(ConfiguredAddonViewSet):
     )
     def get_wb_credentials(self, request, pk=None):
         addon: ConfiguredStorageAddon = self.get_object()
-        if (
-            addon.external_service.credentials_format is CredentialsFormats.OAUTH2
-            and addon.base_account.oauth2_token_metadata.access_token_expiration
-            and addon.base_account.oauth2_token_metadata.access_token_expiration
-            < timezone.now()
-        ):
+        if addon.external_service.credentials_format is CredentialsFormats.OAUTH2:
             addon.base_account.refresh_oauth_access_token__blocking()
         self.resource_name = "waterbutler-credentials"  # for the jsonapi resource type
         return Response(WaterButlerConfigSerializer(addon).data)
