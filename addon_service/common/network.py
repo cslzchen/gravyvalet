@@ -83,7 +83,9 @@ class GravyvaletHttpRequestor(HttpRequestor):
             async with self._try_send(request) as _response:
                 yield _response
         except exceptions.ExpiredAccessToken:
-            await _PrivateNetworkInfo.get(self).account.refresh_oauth2_access_token()
+            await _PrivateNetworkInfo.get(self).account.refresh_oauth2_access_token(
+                force=True
+            )
             # if this one fails, don't try refreshing again
             async with self._try_send(request) as _response:
                 yield _response
