@@ -9,6 +9,7 @@ from django.core.management import (
     CommandError,
 )
 from django.db import transaction
+from tqdm import tqdm
 
 from addon_service.authorized_account.citation.models import AuthorizedCitationAccount
 from addon_service.authorized_account.computing.models import AuthorizedComputingAccount
@@ -177,7 +178,9 @@ class Command(BaseCommand):
             node_settings_class,
         ) in services_to_migrate:
             external_service = ExternalService.objects.filter(wb_key=service_name)[0]
-            for user_settings in user_settings_class.objects.all():
+            for user_settings in tqdm(
+                user_settings_class.objects.all(), f"Migrating users for {service_name}"
+            ):
                 try:
                     self.migrate_for_user(
                         integration_type, service_name, user_settings, external_service
