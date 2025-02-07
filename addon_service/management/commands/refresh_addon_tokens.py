@@ -44,7 +44,7 @@ def refresh_addon_tokens_for_external_service(
 
             allowance -= 1
             last_call = time.time()
-            account.refresh_oauth_access_token__blocking(force=True)
+            account.refresh_oauth_access_token__blocking()
 
 
 @celery.shared_task
@@ -68,11 +68,4 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         fake = options["fake"]
-        refresh_addon_tokens(
-            addons={
-                "box": 60,
-                "googledrive": 14,
-                "mendeley": 14,
-            },
-            fake=fake,
-        )
+        refresh_addon_tokens(addons=["box", "googledrive", "mendeley"], fake=fake)

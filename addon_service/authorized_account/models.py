@@ -7,7 +7,6 @@ from django.db import (
     models,
     transaction,
 )
-from django.utils import timezone
 
 from addon_service.addon_imp.instantiation import get_addon_instance
 from addon_service.addon_operation.models import AddonOperationModel
@@ -316,7 +315,7 @@ class AuthorizedAccount(AddonsServiceBaseModel):
     ###
     # async functions for use in oauth2 callback flows
 
-    async def refresh_oauth2_access_token(self, force=False) -> None:
+    async def refresh_oauth2_access_token(self) -> None:
         (
             _oauth_client_config,
             _oauth_token_metadata,
@@ -326,16 +325,15 @@ class AuthorizedAccount(AddonsServiceBaseModel):
             or await sync_to_async(lambda: _oauth_token_metadata.access_token_only)()
         ):
             return
-        if force or _oauth_token_metadata.access_token_expiration < timezone.now():
-            _fresh_token_result = await oauth2_utils.get_refreshed_access_token(
-                token_endpoint_url=_oauth_client_config.token_endpoint_url,
-                refresh_token=_oauth_token_metadata.refresh_token,
-                auth_callback_url=_oauth_client_config.auth_callback_url,
-                client_id=_oauth_client_config.client_id,
-                client_secret=_oauth_client_config.client_secret,
-            )
-            await _oauth_token_metadata.update_with_fresh_token(_fresh_token_result)
-            await self.arefresh_from_db()
+        _fresh_token_result = await oauth2_utils.get_refreshed_access_token(
+            token_endpoint_url=_oauth_client_config.token_endpoint_url,
+            refresh_token=_oauth_token_metadata.refresh_token,
+            auth_callback_url=_oauth_client_config.auth_callback_url,
+            client_id=_oauth_client_config.client_id,
+            client_secret=_oauth_client_config.client_secret,
+        )
+        await _oauth_token_metadata.update_with_fresh_token(_fresh_token_result)
+        await self.arefresh_from_db()
 
     refresh_oauth_access_token__blocking = async_to_sync(refresh_oauth2_access_token)
 
