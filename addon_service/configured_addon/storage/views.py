@@ -27,7 +27,12 @@ class ConfiguredStorageAddonViewSet(ConfiguredAddonViewSet):
         url_path="waterbutler-credentials",
     )
     def get_wb_credentials(self, request, pk=None):
-        addon: ConfiguredStorageAddon = self.get_object()
+        guid = pk.split(":")[0]
+        external_service_name = pk.split(":")[1]
+        addon: ConfiguredStorageAddon = ConfiguredStorageAddon.objects.get(
+            base_account__external_service__wb_key=external_service_name,
+            authorized_resource__resource_uri=f"http://localhost:5000/{guid}",
+        )
         if addon.external_service.credentials_format is CredentialsFormats.OAUTH2:
             addon.base_account.refresh_oauth_access_token__blocking()
         self.resource_name = "waterbutler-credentials"  # for the jsonapi resource type
