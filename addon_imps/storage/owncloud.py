@@ -41,6 +41,10 @@ class OwnCloudStorageImp(storage.StorageAddonHttpRequestorImp):
                 headers=headers,
                 content=_BUILD_PROPFIND_CURRENT_USER_PRINCIPAL,
             ) as response:
+                if response.http_status in (401, 403):
+                    raise ValidationError(
+                        "Invalid OwnCloud credentials (unauthorized)."
+                    )
                 response_xml = await response.text_content()
                 try:
                     current_user_principal_url = self._parse_current_user_principal(
@@ -67,6 +71,10 @@ class OwnCloudStorageImp(storage.StorageAddonHttpRequestorImp):
                 headers=headers,
                 content=_BUILD_PROPFIND_DISPLAYNAME,
             ) as response:
+                if response.http_status in (401, 403):
+                    raise ValidationError(
+                        "Invalid OwnCloud credentials (unauthorized)."
+                    )
                 response_xml = await response.text_content()
                 return self._parse_displayname(response_xml)
         except ValueError as exc:
