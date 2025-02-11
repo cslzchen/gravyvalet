@@ -43,7 +43,7 @@ class DropboxStorageImp(storage.StorageAddonHttpRequestorImp):
             }
 
     async def get_item_info(self, item_id: str) -> storage.ItemResult:
-        if await self._is_root_id(item_id):
+        if self._is_root_id(item_id):
             return storage.ItemResult(
                 item_id="/",
                 item_name="root folder",
