@@ -59,7 +59,7 @@ class DropboxStorageImp(storage.StorageAddonHttpRequestorImp):
                 _parsed = _DropboxParsedJson(await _response.json_content())
                 return _parsed.single_item_result()
 
-    async def _is_root_id(self, item_id):
+    def _is_root_id(self, item_id):
         return not item_id or item_id == ROOT_ITEM_ID
 
     async def list_child_items(
