@@ -326,7 +326,11 @@ class AuthorizedAccount(AddonsServiceBaseModel):
             or await sync_to_async(lambda: _oauth_token_metadata.access_token_only)()
         ):
             return
-        if force or _oauth_token_metadata.access_token_expiration < timezone.now():
+        if (
+            force
+            or (not _oauth_token_metadata.access_token_expiration)
+            or _oauth_token_metadata.access_token_expiration < timezone.now()
+        ):
             _fresh_token_result = await oauth2_utils.get_refreshed_access_token(
                 token_endpoint_url=_oauth_client_config.token_endpoint_url,
                 refresh_token=_oauth_token_metadata.refresh_token,
