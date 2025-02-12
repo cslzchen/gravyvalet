@@ -60,6 +60,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.DEBUG
+SILKY_PYTHON_PROFILER = env.SILKY_PYTHON_PROFILER
 
 USER_REFERENCE_COOKIE = env.OSF_AUTH_COOKIE_NAME
 OSF_BASE_URL = env.OSF_BASE_URL.rstrip("/")

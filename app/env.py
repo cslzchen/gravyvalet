@@ -58,6 +58,8 @@ OSF_BACKCHANNEL_QUEUE_NAME = os.environ.get(
     "OSF_BACKCHANNEL_QUEUE_NAME", "account_status_changes"
 )
 
+SILKY_PYTHON_PROFILER = os.environ.get("SILKY_PYTHON_PROFILER", False)
+
 ###
 # credentials encryption secrets and parameters
 #
