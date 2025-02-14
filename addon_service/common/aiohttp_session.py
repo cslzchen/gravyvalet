@@ -1,7 +1,9 @@
 import threading
-from threading import local
+import weakref
+from typing import MutableMapping
 
 import aiohttp
+from aiohttp import ClientSession
 from asgiref.sync import async_to_sync
 
 
@@ -12,31 +14,30 @@ __all__ = (
     "close_singleton_client_session__blocking",
 )
 
-__SINGLETON_CLIENT_SESSION_STORE: threading.local = local()
+__SINGLETON_CLIENT_SESSION_STORE: MutableMapping[threading.Thread, ClientSession] = (
+    weakref.WeakKeyDictionary()
+)
+
+
+async def has_current_session():
+    thread_id = threading.current_thread()
+    return __SINGLETON_CLIENT_SESSION_STORE.get(thread_id, False)
 
 
 async def get_singleton_client_session() -> aiohttp.ClientSession:
     """return a reusable aiohttp client session (thread-local singleton)"""
-    if not _is_session_valid():
-        __SINGLETON_CLIENT_SESSION_STORE.session = aiohttp.ClientSession(
+    thread_id = threading.current_thread()
+    if thread_id not in __SINGLETON_CLIENT_SESSION_STORE:
+        __SINGLETON_CLIENT_SESSION_STORE[thread_id] = aiohttp.ClientSession(
             cookie_jar=aiohttp.DummyCookieJar(),  # ignore all cookies
         )
-    return __SINGLETON_CLIENT_SESSION_STORE.session
-
-
-def _is_session_valid() -> bool:
-    return (
-        hasattr(__SINGLETON_CLIENT_SESSION_STORE, "session")
-        and isinstance(__SINGLETON_CLIENT_SESSION_STORE.session, aiohttp.ClientSession)
-        and not __SINGLETON_CLIENT_SESSION_STORE.session.closed
-    )
+    return __SINGLETON_CLIENT_SESSION_STORE[thread_id]
 
 
 async def close_singleton_client_session() -> None:
     """close the reusable aiohttp client session (thread-local singleton)"""
-    if _is_session_valid():
-        await __SINGLETON_CLIENT_SESSION_STORE.close()
-        __SINGLETON_CLIENT_SESSION_STORE.session = None
+    if session := await has_current_session():
+        await session.close()
 
 
 get_singleton_client_session__blocking = async_to_sync(get_singleton_client_session)
