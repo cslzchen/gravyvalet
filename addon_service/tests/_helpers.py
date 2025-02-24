@@ -15,6 +15,7 @@ from unittest.mock import (
 )
 from urllib.parse import (
     parse_qs,
+    urlencode,
     urlparse,
 )
 
@@ -29,7 +30,7 @@ from addon_service.common.aiohttp_session import get_singleton_client_session
 
 
 if TYPE_CHECKING:
-    from addon_service.external_storage_service import ExternalStorageService
+    from addon_service.external_service.storage import ExternalStorageService
 
 
 class MockOSF:
@@ -243,9 +244,13 @@ class MockOAuth1ServiceProvider:
 class _FakeAiohttpResponse:
     status: HTTPStatus = HTTPStatus.OK
     data: dict | None = None
+    content_type = "application/json"
 
     async def json(self):
         return self.data
+
+    async def text(self):
+        return urlencode(self.data)
 
 
 # TODO: use this more often in tests

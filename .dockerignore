@@ -1,0 +1,12 @@
+**
+
+!addon_imps
+!addon_service
+!addon_toolkit
+!app
+!gravyvalet_code_docs
+!manage.py
+!poetry.lock
+!pyproject.toml
+!setup.cfg
+!README.md

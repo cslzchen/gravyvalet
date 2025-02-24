@@ -6,6 +6,7 @@ from addon_service import models as db
 from addon_service.common import known_imps
 from addon_service.common.credentials_formats import CredentialsFormats
 from addon_service.common.service_types import ServiceTypes
+from addon_service.external_service.storage.models import StorageSupportedFeatures
 from addon_toolkit import AddonCapabilities
 
 from ._helpers import patch_encryption_key_derivation
@@ -84,6 +85,7 @@ class ExternalStorageServiceFactory(DjangoModelFactory):
         model_class,
         credentials_format=CredentialsFormats.PERSONAL_ACCESS_TOKEN,
         service_type=ServiceTypes.PUBLIC,
+        supported_features=StorageSupportedFeatures.ADD_UPDATE_FILES,
         *args,
         **kwargs,
     ):
@@ -94,6 +96,7 @@ class ExternalStorageServiceFactory(DjangoModelFactory):
             model_class=model_class,
             int_credentials_format=credentials_format.value,
             int_service_type=service_type.value,
+            int_supported_features=supported_features.value,
             api_base_url=api_base_url,
             *args,
             **kwargs,
@@ -122,8 +125,8 @@ class AuthorizedStorageAccountFactory(DjangoModelFactory):
     def _create(
         cls,
         model_class,
-        external_storage_service=None,
         account_owner=None,
+        external_service=None,
         credentials=None,
         credentials_format=CredentialsFormats.OAUTH2,
         authorized_scopes=None,
@@ -132,7 +135,7 @@ class AuthorizedStorageAccountFactory(DjangoModelFactory):
     ):
         account = super()._create(
             model_class=model_class,
-            external_storage_service=external_storage_service
+            external_service=external_service
             or ExternalStorageOAuth2ServiceFactory(
                 credentials_format=credentials_format
             ),
@@ -171,7 +174,7 @@ class ConfiguredStorageAddonFactory(DjangoModelFactory):
     ):
         authorized_resource = authorized_resource or ResourceReferenceFactory()
         base_account = base_account or AuthorizedStorageAccountFactory(
-            external_storage_service=external_storage_service,
+            external_service=external_storage_service,
             credentials_format=credentials_format,
             account_owner=account_owner,
             credentials=credentials,

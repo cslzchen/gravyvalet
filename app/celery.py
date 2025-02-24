@@ -29,7 +29,6 @@ gv_chill_queue = Queue(TaskUrgency.CHILL.queue_name())
 gv_reactive_queue = Queue(TaskUrgency.REACTIVE.queue_name())
 gv_interactive_queue = Queue(TaskUrgency.INTERACTIVE.queue_name())
 
-
 app = Celery(
     broker_url=AMQP_BROKER_URL,
     task_queues=(
@@ -41,10 +40,17 @@ app = Celery(
         "addon_service.tasks.invocation.*": {"queue": gv_interactive_queue},
         "addon_service.tasks.osf_backchannel.*": {"queue": gv_reactive_queue},
         "addon_service.tasks.key_rotation.*": {"queue": gv_chill_queue},
+        "addon_service.management.commands.refresh_addon_tokens.*": {
+            "queue": gv_chill_queue
+        },
     },
-    include=["addon_service.tasks"],
+    include=[
+        "addon_service.tasks",
+        "addon_service.management.commands.refresh_addon_tokens",
+    ],
 )
 
+app.config_from_object("django.conf:settings", namespace="CELERY")
 
 ###
 # additional consumer for custom (non-celery) messages from osf

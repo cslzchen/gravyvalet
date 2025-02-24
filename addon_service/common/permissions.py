@@ -25,6 +25,20 @@ class SessionUserIsOwner(permissions.BasePermission):
         return False
 
 
+class SessionUserIsOwnerOrResourceAdmin(permissions.BasePermission):
+    """for object permissions on objects with a `resource_uri` attribute"""
+
+    message = "Permission denied, to perform this action you should be the one who created this addon or project admin"
+
+    def has_object_permission(self, request, view, obj):
+        _user_uri = request.session.get("user_reference_uri")
+        return (_user_uri == obj.owner_uri) or osf.has_osf_permission_on_resource(
+            request,
+            obj.resource_uri,
+            osf.OSFPermission.ADMIN,
+        )
+
+
 class SessionUserCanViewReferencedResource(permissions.BasePermission):
     """for object permissions on objects with a `resource_uri` attribute"""
 
@@ -48,7 +62,7 @@ class SessionUserMayConnectAddon(permissions.BasePermission):
             and osf.has_osf_permission_on_resource(
                 request,
                 obj.resource_uri,
-                osf.OSFPermission.ADMIN,
+                osf.OSFPermission.WRITE,
             )
         )
 

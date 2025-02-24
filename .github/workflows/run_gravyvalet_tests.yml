@@ -28,30 +28,30 @@ jobs:
           - 5432:5432
     steps:
       - uses: actions/checkout@v4
-
       - name: set up python${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: pip
-          cache-dependency-path: |
-            requirements/requirements.txt
-            requirements/dev-requirements.txt
-
+      - name: install poetry
+        run: curl -sSL https://install.python-poetry.org | python - --version 1.8.3
+      - name: setup venv
+        run: python -m venv .venv
+      - name: set up venv cache
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: ${{hashfiles('poetry.lock')}}
       - name: install py dependencies
-        run: pip install -r requirements/dev-requirements.txt
-
+        run: poetry install --without release
       - name: set up pre-commit cache
         uses: actions/cache@v4
         with:
           path: ~/.cache/pre-commit
-          key: pre-commit|${{ matrix.python-version }}|${{ hashFiles('.pre-commit-config.yaml') }}
-
+          key: poetry run pre-commit|${{ matrix.python-version }}|${{ hashFiles('.pre-commit-config.yaml') }}
       - name: run pre-commit checks
-        run: pre-commit run --all-files --show-diff-on-failure
-
+        run: poetry run pre-commit run --all-files --show-diff-on-failure
       - name: run tests
-        run: python3 -Werror manage.py test
+        run: poetry run python -Werror manage.py test
         env:
           DEBUG: 1
           POSTGRES_HOST: localhost

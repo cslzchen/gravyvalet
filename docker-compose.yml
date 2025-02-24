@@ -22,6 +22,7 @@ services:
       OSF_BASE_URL: "http://192.168.168.167:5000"
       OSF_API_BASE_URL: "http://192.168.168.167:8000"
       OSF_AUTH_COOKIE_NAME: osf
+      SESSION_COOKIE_DOMAIN: localhost
       AMQP_BROKER_URL: "amqp://guest:guest@rabbitmq:5672"
       GRAVYVALET_ENCRYPT_SECRET: "this is fine"
     ports:
@@ -36,9 +37,23 @@ services:
   celeryworker:
     build:
       context: .
-      target: gv-local
+      target: gv-deploy
     restart: unless-stopped
-    command: /usr/local/bin/celery --app app worker --uid daemon -l INFO
+    command: python -m celery --app app worker --uid daemon -l info
+    depends_on:
+      - rabbitmq
+      - postgres
+    volumes:
+      - ./:/code:cached
+    environment: *gv_environment
+    stdin_open: true
+
+  celerybeat:
+    build:
+      context: .
+      target: gv-deploy
+    restart: unless-stopped
+    command: python -m celery --app app beat --uid daemon -l info
     depends_on:
       - rabbitmq
       - postgres

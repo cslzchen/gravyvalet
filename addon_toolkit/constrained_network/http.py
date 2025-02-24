@@ -6,6 +6,7 @@ from http import (
     HTTPMethod,
     HTTPStatus,
 )
+from typing import AsyncContextManager
 
 from addon_toolkit.iri_utils import (
     KeyValuePairs,
@@ -26,7 +27,8 @@ class HttpRequestInfo:
     uri_path: str
     query: Multidict
     headers: Multidict
-
+    json: dict
+    content: str | None = None
     # TODO: content (when needed)
 
 
@@ -38,6 +40,8 @@ class HttpResponseInfo(typing.Protocol):
     def headers(self) -> Multidict: ...
 
     async def json_content(self) -> typing.Any: ...
+
+    async def text_content(self) -> str: ...
 
     # TODO: streaming (when needed)
 
@@ -74,12 +78,16 @@ class HttpRequestor(typing.Protocol):
         uri_path: str,
         query: Multidict | KeyValuePairs | None = None,
         headers: Multidict | KeyValuePairs | None = None,
-    ):
+        json: dict | None = None,
+        content: str | None = None,
+    ) -> AsyncContextManager[HttpResponseInfo]:
         _request_info = HttpRequestInfo(
             http_method=http_method,
             uri_path=uri_path,
-            query=(query if isinstance(query, Multidict) else Multidict(query)),
+            query=query,
             headers=(headers if isinstance(headers, Multidict) else Multidict(headers)),
+            json=json,
+            content=content,
         )
         async with self._do_send(_request_info) as _response:
             yield _response
@@ -97,3 +105,4 @@ class HttpRequestor(typing.Protocol):
     POST: _MethodRequestMethod = partialmethod(request, HTTPMethod.POST)
     PUT: _MethodRequestMethod = partialmethod(request, HTTPMethod.PUT)
     DELETE: _MethodRequestMethod = partialmethod(request, HTTPMethod.DELETE)
+    PROPFIND: _MethodRequestMethod = partialmethod(request, "PROPFIND")

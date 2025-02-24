@@ -65,6 +65,8 @@ class TestUserReferenceAPI(APITestCase):
                 _content["data"]["relationships"].keys(),
                 {
                     "authorized_storage_accounts",
+                    "authorized_citation_accounts",
+                    "authorized_computing_accounts",
                     "configured_resources",
                 },
             )
@@ -198,6 +200,8 @@ class TestUserReferenceViewSet(TestCase):
             set(_content["data"]["relationships"].keys()),
             {
                 "authorized_storage_accounts",
+                "authorized_citation_accounts",
+                "authorized_computing_accounts",
                 "configured_resources",
             },
         )

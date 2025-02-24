@@ -2,8 +2,10 @@
 """
 
 import os
+import sys
 
 
+TESTING = "test" in sys.argv
 DEBUG = bool(os.environ.get("DEBUG"))  # any non-empty value enables debug mode
 SECRET_KEY = os.environ.get("SECRET_KEY")  # used by django for cryptographic signing
 ALLOWED_HOSTS = list(filter(bool, os.environ.get("ALLOWED_HOSTS", "").split(",")))
@@ -12,6 +14,10 @@ CORS_ALLOWED_ORIGINS = tuple(
 )
 SENTRY_DSN = os.environ.get("SENTRY_DSN")
 SECURE_PROXY_SSL_HEADER = os.environ.get("SECURE_PROXY_SSL_HEADER")
+NEW_RELIC_CONFIG_FILE = os.environ.get("NEW_RELIC_CONFIG_FILE")
+NEW_RELIC_ENVIRONMENT = os.environ.get("NEW_RELIC_ENVIRONMENT")
+SESSION_COOKIE_DOMAIN = os.environ.get("SESSION_COOKIE_DOMAIN")
+
 
 ###
 # databases
@@ -51,6 +57,8 @@ GV_QUEUE_NAME_PREFIX = os.environ.get("GV_QUEUE_NAME_PREFIX", "gravyvalet_tasks"
 OSF_BACKCHANNEL_QUEUE_NAME = os.environ.get(
     "OSF_BACKCHANNEL_QUEUE_NAME", "account_status_changes"
 )
+
+SILKY_PYTHON_PROFILER = os.environ.get("SILKY_PYTHON_PROFILER", False)
 
 ###
 # credentials encryption secrets and parameters

@@ -1,5 +1,8 @@
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import ArrayField
+from django.core.cache import cache
 from django.db import models
+from django.db.models import CharField
 
 from addon_service.osf_models.fields import (
     DateTimeAwareJSONField,
@@ -7,7 +10,14 @@ from addon_service.osf_models.fields import (
 )
 
 
-class ExternalAccount(models.Model):
+class Model(models.Model):
+    class Meta:
+        abstract = True
+        managed = False
+        app_label = "osf"
+
+
+class ExternalAccount(Model):
     """An account on an external service.
 
     Note that this object is not and should not be aware of what other objects
@@ -53,13 +63,66 @@ class ExternalAccount(models.Model):
     class Meta:
         managed = False
         app_label = "osf"
+        db_table = "osf_externalaccount"
 
 
-class BaseOAuthNodeSettings(models.Model):
+class Guid(Model):
+    _id = CharField()
+    content_type_id = models.IntegerField()
+    object_id = models.IntegerField()
+
+    class Meta:
+        db_table = "osf_guid"
+        managed = False
+        app_label = "osf"
+
+
+class AbstractNode(Model):
+    class Meta:
+        db_table = "osf_guid"
+        managed = False
+        app_label = "osf"
+
+
+class OsfUser(Model):
+    @property
+    def guid(self):
+        content_type_id = cache.get_or_set(
+            "user_contenttype_id",
+            lambda: ContentType.objects.using("osf")
+            .get(app_label="osf", model="osfuser")
+            .id,
+            timeout=None,
+        )
+        return (
+            Guid.objects.filter(content_type_id=content_type_id, object_id=self.id)
+            .first()
+            ._id
+        )
+
+    class Meta:
+        db_table = "osf_osfuser"
+        managed = False
+        app_label = "osf"
+
+
+class UserToExternalAccount(Model):
+    osfuser = models.ForeignKey(OsfUser, on_delete=models.CASCADE)
+    externalaccount = models.ForeignKey(ExternalAccount, on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = "osf_osfuser_external_accounts"
+        managed = False
+        app_label = "osf"
+
+
+class BaseOAuthNodeSettings(Model):
     class Meta:
         abstract = True
         managed = False
 
+    # Node to which these settings are bound to
+    owner_id = models.IntegerField()
     external_account = models.ForeignKey(
         ExternalAccount,
         null=True,
@@ -68,13 +131,14 @@ class BaseOAuthNodeSettings(models.Model):
     )
 
 
-class BaseOAuthUserSettings(models.Model):
+class BaseOAuthUserSettings(Model):
     class Meta:
         abstract = True
         managed = False
 
     # Keeps track of what nodes have been given permission to use external
     #   accounts belonging to the user.
+    owner_id = models.IntegerField(blank=True, null=True)
     oauth_grants = DateTimeAwareJSONField(default=dict, blank=True)
     # example:
     # {
@@ -96,6 +160,8 @@ class BitbucketUserSettings(BaseOAuthUserSettings):
 class BitbucketNodeSettings(BaseOAuthNodeSettings):
     class Meta:
         db_table = "addons_bitbucket_nodesettings"
+        managed = False
+        app_label = "addons"
 
     user = models.TextField(blank=True, null=True)
     repo = models.TextField(blank=True, null=True)
@@ -113,6 +179,8 @@ class BoaUserSettings(BaseOAuthUserSettings):
 class BoaNodeSettings(BaseOAuthNodeSettings):
     class Meta:
         db_table = "addons_boa_nodesettings"
+        managed = False
+        app_label = "addons"
 
     folder_id = models.TextField(blank=True, null=True)
     user_settings = models.ForeignKey(
@@ -128,6 +196,8 @@ class BoxUserSettings(BaseOAuthUserSettings):
 class BoxNodeSettings(BaseOAuthNodeSettings):
     class Meta:
         db_table = "addons_box_nodesettings"
+        managed = False
+        app_label = "addons"
 
     folder_id = models.TextField(null=True, blank=True)
     folder_name = models.TextField(null=True, blank=True)
@@ -145,6 +215,8 @@ class DataverseUserSettings(BaseOAuthUserSettings):
 class DataverseNodeSettings(BaseOAuthNodeSettings):
     class Meta:
         db_table = "addons_dataverse_nodesettings"
+        managed = False
+        app_label = "addons"
 
     dataverse_alias = models.TextField(blank=True, null=True)
     dataverse = models.TextField(blank=True, null=True)
@@ -164,6 +236,8 @@ class DropboxUserSettings(BaseOAuthUserSettings):
 class DropboxNodeSettings(BaseOAuthNodeSettings):
     class Meta:
         db_table = "addons_dropbox_nodesettings"
+        managed = False
+        app_label = "addons"
 
     folder = models.TextField(null=True, blank=True)
     user_settings = models.ForeignKey(
@@ -179,6 +253,8 @@ class FigshareUserSettings(BaseOAuthUserSettings):
 class FigshareNodeSettings(BaseOAuthNodeSettings):
     class Meta:
         db_table = "addons_figshare_nodesettings"
+        managed = False
+        app_label = "addons"
 
     folder_id = models.TextField(blank=True, null=True)
     folder_name = models.TextField(blank=True, null=True)
@@ -196,6 +272,8 @@ class GithubUserSettings(BaseOAuthUserSettings):
 class GithubNodeSettings(BaseOAuthNodeSettings):
     class Meta:
         db_table = "addons_github_nodesettings"
+        managed = False
+        app_label = "addons"
 
     user = models.TextField(blank=True, null=True)
     repo = models.TextField(blank=True, null=True)
@@ -215,6 +293,8 @@ class GitlabUserSettings(BaseOAuthUserSettings):
 class GitlabNodeSettings(BaseOAuthNodeSettings):
     class Meta:
         db_table = "addons_gitlab_nodesettings"
+        managed = False
+        app_label = "addons"
 
     user = models.TextField(blank=True, null=True)
     repo = models.TextField(blank=True, null=True)
@@ -234,8 +314,10 @@ class GoogleDriveUserSettings(BaseOAuthUserSettings):
 class GoogleDriveNodeSettings(BaseOAuthNodeSettings):
     class Meta:
         db_table = "addons_googledrive_nodesettings"
+        managed = False
+        app_label = "addons"
 
-    older_id = models.TextField(null=True, blank=True)
+    folder_id = models.TextField(null=True, blank=True)
     folder_path = models.TextField(null=True, blank=True)
     user_settings = models.ForeignKey(
         GoogleDriveUserSettings, null=True, blank=True, on_delete=models.CASCADE
@@ -250,6 +332,8 @@ class MendeleyUserSettings(BaseOAuthUserSettings):
 class MendeleyNodeSettings(BaseOAuthNodeSettings):
     class Meta:
         db_table = "addons_mendeley_nodesettings"
+        managed = False
+        app_label = "addons"
 
     list_id = models.TextField(blank=True, null=True)
     user_settings = models.ForeignKey(
@@ -265,6 +349,8 @@ class OneDriveUserSettings(BaseOAuthUserSettings):
 class OneDriveNodeSettings(BaseOAuthNodeSettings):
     class Meta:
         db_table = "addons_onedrive_nodesettings"
+        managed = False
+        app_label = "addons"
 
     folder_id = models.TextField(null=True, blank=True)
     folder_path = models.TextField(null=True, blank=True)
@@ -282,6 +368,8 @@ class OwnCloudUserSettings(BaseOAuthUserSettings):
 class OwnCloudNodeSettings(BaseOAuthNodeSettings):
     class Meta:
         db_table = "addons_owncloud_nodesettings"
+        managed = False
+        app_label = "addons"
 
     folder_id = models.TextField(blank=True, null=True)
     user_settings = models.ForeignKey(
@@ -297,6 +385,8 @@ class S3UserSettings(BaseOAuthUserSettings):
 class S3NodeSettings(BaseOAuthNodeSettings):
     class Meta:
         db_table = "addons_s3_nodesettings"
+        managed = False
+        app_label = "addons"
 
     folder_id = models.TextField(blank=True, null=True)
     folder_name = models.TextField(blank=True, null=True)
@@ -314,6 +404,8 @@ class ZoteroUserSettings(BaseOAuthUserSettings):
 class ZoteroNodeSettings(BaseOAuthNodeSettings):
     class Meta:
         db_table = "addons_zotero_nodesettings"
+        managed = False
+        app_label = "addons"
 
     list_id = models.TextField(blank=True, null=True)
     library_id = models.TextField(blank=True, null=True)

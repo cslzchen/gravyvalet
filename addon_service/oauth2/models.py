@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
+from enum import auto
 from typing import TYPE_CHECKING
 
 from asgiref.sync import sync_to_async
@@ -19,7 +20,12 @@ from .utils import FreshTokenResult
 
 
 if TYPE_CHECKING:
-    from addon_service.abstract.authorized_account.models import AuthorizedAccount
+    from addon_service.authorized_account.models import AuthorizedAccount
+
+
+class OAuth2ServiceQuirks(models.IntegerChoices):
+    ONLY_ACCESS_TOKEN = auto()
+    NON_EXPIRABLE_REFRESH_TOKEN = auto()
 
 
 class OAuth2ClientConfig(AddonsServiceBaseModel):
@@ -36,6 +42,9 @@ class OAuth2ClientConfig(AddonsServiceBaseModel):
     # The registered ID of the OAuth client
     client_id = models.CharField(null=True)
     client_secret = models.CharField(null=True)
+    quirks = models.IntegerField(
+        choices=OAuth2ServiceQuirks.choices, null=True, blank=True
+    )
 
     class Meta:
         verbose_name = "OAuth2 Client Config"
@@ -72,6 +81,8 @@ class OAuth2TokenMetadata(AddonsServiceBaseModel):
     refresh_token = models.CharField(null=True, blank=True, db_index=True)
     # The expiration time of the access token stored in Credentials
     access_token_expiration = models.DateTimeField(null=True, blank=True)
+    # The date of last token refresh
+    date_last_refreshed = models.DateTimeField(null=True, blank=True)
     # The scopes associated with the access token stored in Credentials
     authorized_scopes = ArrayField(models.CharField(), null=False)
 
@@ -80,12 +91,12 @@ class OAuth2TokenMetadata(AddonsServiceBaseModel):
         return f"{self.pk}.{self.state_nonce}" if self.state_nonce else None
 
     @property
-    def linked_accounts(self):
-        return self.authorized_storage_accounts.all()
+    def client_details(self):
+        return self.authorized_account.external_service.oauth2_client_config
 
     @property
-    def client_details(self):
-        return self.linked_accounts[0].external_service.oauth2_client_config
+    def authorized_account(self):
+        return self.authorized_accounts.first()
 
     def clean_fields(self, *args, **kwargs):
         super().clean_fields(*args, **kwargs)
@@ -98,15 +109,20 @@ class OAuth2TokenMetadata(AddonsServiceBaseModel):
             raise ValidationError(
                 "Error on OAuth2 Flow: state nonce and refresh token both present."
             )
-        if not (self.state_nonce or self.refresh_token):
+        if not (self.state_nonce or self.access_token_only or self.refresh_token):
             raise ValidationError(
                 "Error in OAuth2 Flow: Neither state nonce nor refresh token present."
             )
 
+    @property
+    def access_token_only(self):
+        if self.authorized_account:
+            return self.client_details.quirks == OAuth2ServiceQuirks.ONLY_ACCESS_TOKEN
+
     def validate_shared_client(self):
         client_configs = set(
             account.external_service.oauth2_client_config
-            for account in self.linked_accounts
+            for account in self.authorized_accounts.all()
         )
         if len(client_configs) != 1:
             raise ValidationError(
@@ -120,7 +136,8 @@ class OAuth2TokenMetadata(AddonsServiceBaseModel):
     ) -> tuple[AuthorizedAccount]:
         # update this record's fields
         self.state_nonce = None  # one-time-use, now used
-        self.refresh_token = fresh_token_result.refresh_token
+        if fresh_token_result.refresh_token:
+            self.refresh_token = fresh_token_result.refresh_token
         if fresh_token_result.expires_in is None:
             self.access_token_expiration = None
         else:
@@ -129,12 +146,13 @@ class OAuth2TokenMetadata(AddonsServiceBaseModel):
             )
         if fresh_token_result.scopes is not None:
             self.authorized_scopes = fresh_token_result.scopes
+        self.date_last_refreshed = timezone.now()
         self.save()
         # update related records' fields
         _credentials = AccessTokenCredentials(
             access_token=fresh_token_result.access_token
         )
-        _accounts = tuple(self.linked_accounts)
+        _accounts = tuple(self.authorized_accounts.all())
         for _account in _accounts:
             _account.credentials = _credentials
             _account.save()

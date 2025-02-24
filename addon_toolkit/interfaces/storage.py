@@ -8,6 +8,7 @@ from collections import abc
 from addon_toolkit.addon_operation_declaration import immediate_operation
 from addon_toolkit.capabilities import AddonCapabilities
 from addon_toolkit.constrained_network.http import HttpRequestor
+from addon_toolkit.credentials import Credentials
 from addon_toolkit.cursor import Cursor
 from addon_toolkit.imp import AddonImp
 
@@ -16,6 +17,7 @@ from ._base import BaseAddonInterface
 
 __all__ = (
     "ItemResult",
+    "ItemType",
     "ItemSampleResult",
     "PossibleSingleItemResult",
     "StorageAddonInterface",
@@ -36,7 +38,7 @@ class StorageConfig:
     external_account_id: str | None = None
 
 
-class ItemType(enum.Enum):
+class ItemType(enum.StrEnum):
     FILE = enum.auto()
     FOLDER = enum.auto()
 
@@ -46,7 +48,16 @@ class ItemResult:
     item_id: str
     item_name: str
     item_type: ItemType
+    can_be_root: bool = None
+    may_contain_root_candidates: bool = None
     item_path: abc.Sequence[typing.Self] | None = None
+
+    def __post_init__(self):
+        """By default can_be_root and may_contain_root_candidates are bound to item_type"""
+        if self.can_be_root is None:
+            self.can_be_root = self.item_type == ItemType.FOLDER
+        if self.may_contain_root_candidates is None:
+            self.may_contain_root_candidates = self.item_type == ItemType.FOLDER
 
 
 @dataclasses.dataclass
@@ -80,7 +91,6 @@ class ItemSampleResult:
 
 
 class StorageAddonInterface(BaseAddonInterface, typing.Protocol):
-
     ###
     # single-item operations:
 
@@ -142,11 +152,35 @@ class StorageAddonInterface(BaseAddonInterface, typing.Protocol):
 #    async def pls_restore_version(self, item_id: str, version_id: str): ...
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass
 class StorageAddonImp(AddonImp):
     """base class for storage addon implementations"""
 
     ADDON_INTERFACE = StorageAddonInterface
 
     config: StorageConfig
+
+    async def build_wb_config(self) -> dict:
+        return {}
+
+
+@dataclasses.dataclass
+class StorageAddonHttpRequestorImp(StorageAddonImp):
+    """base class for storage addon implementations using GV network"""
+
     network: HttpRequestor
+
+
+@dataclasses.dataclass
+class StorageAddonClientRequestorImp[T](StorageAddonImp):
+    """base class for storage addon with custom clients"""
+
+    client: T = dataclasses.field(init=False)
+    credentials: dataclasses.InitVar[Credentials]
+
+    def __post_init__(self, credentials):
+        self.client = self.create_client(credentials)
+
+    @staticmethod
+    def create_client(credentials) -> T:
+        raise NotImplementedError

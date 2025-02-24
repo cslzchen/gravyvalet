@@ -1,7 +1,6 @@
 import dataclasses
-import typing
 from enum import (
-    Enum,
+    StrEnum,
     auto,
 )
 
@@ -18,10 +17,11 @@ __all__ = (
 from addon_toolkit import (
     AddonCapabilities,
     AddonImp,
-    BaseAddonInterface,
     immediate_operation,
 )
 from addon_toolkit.constrained_network.http import HttpRequestor
+
+from ._base import BaseAddonInterface
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -31,24 +31,33 @@ class CitationConfig:
     external_account_id: str | None = None
 
 
-class ItemType(Enum):
+class ItemType(StrEnum):
     DOCUMENT = auto()
     COLLECTION = auto()
 
 
 @dataclasses.dataclass(slots=True)
 class ItemResult:
-    item_id: int
+    item_id: str
     item_name: str
     item_type: ItemType
     item_path: list[str] | None = None
+    can_be_root: bool = None
+    may_contain_root_candidates: bool = None
     csl: dict | None = None
+
+    def __post_init__(self):
+        """By default can_be_root and may_contain_root_candidates are bound to item_type"""
+        if self.can_be_root is None:
+            self.can_be_root = self.item_type == ItemType.COLLECTION
+        if self.may_contain_root_candidates is None:
+            self.may_contain_root_candidates = self.item_type == ItemType.COLLECTION
 
 
 @dataclasses.dataclass(slots=True)
 class ItemSampleResult:
     items: list[ItemResult]
-    total_count: typing.Optional[int] = None
+    total_count: int | None = None
     next_sample_cursor: str | None = None
     prev_sample_cursor: str | None = None
 
@@ -58,7 +67,6 @@ class ItemSampleResult:
 
 
 class CitationServiceInterface(BaseAddonInterface):
-
     @immediate_operation(capability=AddonCapabilities.ACCESS)
     def list_root_collections(self) -> ItemSampleResult:
         """Lists directories (or collections) inside root"""
@@ -67,6 +75,10 @@ class CitationServiceInterface(BaseAddonInterface):
     def list_collection_items(
         self, collection_id: str, filter_items: ItemType | None = None
     ) -> ItemSampleResult:
+        """Lists directories (or collections) and sources (books) inside root"""
+
+    @immediate_operation(capability=AddonCapabilities.ACCESS)
+    def get_item_info(self, item_id: str) -> ItemResult:
         """Lists directories (or collections) and sources (books) inside root"""
 
 

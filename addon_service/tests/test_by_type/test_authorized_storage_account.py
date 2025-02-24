@@ -8,7 +8,7 @@ from django.urls import reverse
 from rest_framework.test import APITestCase
 
 from addon_service import models as db
-from addon_service.authorized_storage_account.views import (
+from addon_service.authorized_account.storage.views import (
     AuthorizedStorageAccountViewSet,
 )
 from addon_service.common.credentials_formats import CredentialsFormats
@@ -48,6 +48,9 @@ MOCK_CREDENTIALS = {
     CredentialsFormats.USERNAME_PASSWORD: UsernamePasswordCredentials(
         username="me",
         password="unsafe",
+    ),
+    CredentialsFormats.DATAVERSE_API_TOKEN: AccessTokenCredentials(
+        access_token="token"
     ),
 }
 
@@ -289,6 +292,9 @@ class TestAuthorizedStorageAccountModel(TestCase):
             username="you",
             password="moresafe",
         ),
+        CredentialsFormats.DATAVERSE_API_TOKEN: AccessTokenCredentials(
+            access_token="new_token"
+        ),
     }
     INVALID_CREDENTIALS = {
         CredentialsFormats.PERSONAL_ACCESS_TOKEN: MOCK_CREDENTIALS[
@@ -298,6 +304,9 @@ class TestAuthorizedStorageAccountModel(TestCase):
             CredentialsFormats.PERSONAL_ACCESS_TOKEN
         ],
         CredentialsFormats.USERNAME_PASSWORD: MOCK_CREDENTIALS[
+            CredentialsFormats.ACCESS_KEY_SECRET_KEY
+        ],
+        CredentialsFormats.DATAVERSE_API_TOKEN: MOCK_CREDENTIALS[
             CredentialsFormats.ACCESS_KEY_SECRET_KEY
         ],
     }
@@ -372,7 +381,7 @@ class TestAuthorizedStorageAccountModel(TestCase):
 
     def test_initiate_oauth2_flow(self):
         account = db.AuthorizedStorageAccount.objects.create(
-            external_storage_service=_factories.ExternalStorageOAuth2ServiceFactory(
+            external_service=_factories.ExternalStorageOAuth2ServiceFactory(
                 credentials_format=CredentialsFormats.OAUTH2
             ),
             account_owner=self._user,
@@ -405,7 +414,7 @@ class TestAuthorizedStorageAccountModel(TestCase):
                 credentials_format=creds_format
             )
             account = db.AuthorizedStorageAccount(
-                external_storage_service=external_service,
+                external_service=external_service,
                 account_owner=self._user,
                 authorized_capabilities=AddonCapabilities.ACCESS,
             )

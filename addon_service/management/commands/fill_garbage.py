@@ -3,7 +3,7 @@ from django.core.management.base import LabelCommand
 
 from addon_service import models as db
 from addon_service.common import known_imps
-from addon_service.credentials.enums import CredentialsFormats
+from addon_service.common.credentials_formats import CredentialsFormats
 from addon_toolkit import AddonCapabilities
 
 

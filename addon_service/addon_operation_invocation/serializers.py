@@ -3,15 +3,24 @@ from rest_framework_json_api import serializers
 from rest_framework_json_api.relations import ResourceRelatedField
 from rest_framework_json_api.utils import get_resource_type_from_model
 
+from addon_service.authorized_account.models import AuthorizedAccount
+from addon_service.authorized_account.polymorphic_serializers import (
+    AuthorizedAccountPolymorphicSerializer,
+)
 from addon_service.common import view_names
 from addon_service.common.enum_serializers import EnumNameChoiceField
 from addon_service.common.invocation_status import InvocationStatus
-from addon_service.common.serializer_fields import DataclassRelatedDataField
+from addon_service.common.serializer_fields import (
+    CustomPolymorphicResourceRelatedField,
+    DataclassRelatedDataField,
+)
+from addon_service.configured_addon.models import ConfiguredAddon
+from addon_service.configured_addon.polymorphic_serializers import (
+    ConfiguredAddonPolymorphicSerializer,
+)
 from addon_service.models import (
     AddonOperationInvocation,
     AddonOperationModel,
-    AuthorizedStorageAccount,
-    ConfiguredStorageAddon,
     UserReference,
 )
 
@@ -49,17 +58,24 @@ class AddonOperationInvocationSerializer(serializers.HyperlinkedModelSerializer)
     modified = serializers.DateTimeField(read_only=True)
     operation_name = serializers.CharField(required=True)
 
-    thru_account = ResourceRelatedField(
+    thru_account = CustomPolymorphicResourceRelatedField(
         many=False,
         required=False,
-        queryset=AuthorizedStorageAccount.objects.active(),
+        queryset=AuthorizedAccount.objects.active(),
         related_link_view_name=view_names.related_view(RESOURCE_TYPE),
+        polymorphic_serializer=AuthorizedAccountPolymorphicSerializer,
     )
-    thru_addon = ResourceRelatedField(
+    thru_addon = CustomPolymorphicResourceRelatedField(
         many=False,
         required=False,
-        queryset=ConfiguredStorageAddon.objects.active(),
+        queryset=ConfiguredAddon.objects.active().select_related(
+            "base_account__external_service",
+            "base_account__authorizedstorageaccount",
+            "base_account__authorizedcitationaccount",
+            "base_account__account_owner",
+        ),
         related_link_view_name=view_names.related_view(RESOURCE_TYPE),
+        polymorphic_serializer=ConfiguredAddonPolymorphicSerializer,
     )
 
     by_user = ResourceRelatedField(
@@ -75,11 +91,15 @@ class AddonOperationInvocationSerializer(serializers.HyperlinkedModelSerializer)
     )
 
     included_serializers = {
-        "thru_account": "addon_service.serializers.AuthorizedStorageAccountSerializer",
-        "thru_addon": "addon_service.serializers.ConfiguredStorageAddonSerializer",
+        "thru_account": "addon_service.serializers.AuthorizedAccountPolymorphicSerializer",
+        "thru_addon": "addon_service.serializers.ConfiguredAddonPolymorphicSerializer",
         "operation": "addon_service.serializers.AddonOperationSerializer",
         "by_user": "addon_service.serializers.UserReferenceSerializer",
     }
+
+    def to_internal_value(self, data):
+        validated_data = super().to_internal_value(data)
+        return validated_data
 
     def create(self, validated_data):
         _thru_addon = validated_data.get("thru_addon")

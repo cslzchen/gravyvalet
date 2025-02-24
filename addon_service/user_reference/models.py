@@ -1,9 +1,12 @@
 from django.db import models
 from django.utils import timezone
 
-from addon_service.authorized_storage_account.models import AuthorizedStorageAccount
+from addon_service.authorized_account.citation.models import AuthorizedCitationAccount
+from addon_service.authorized_account.computing.models import AuthorizedComputingAccount
+from addon_service.authorized_account.storage.models import AuthorizedStorageAccount
 from addon_service.common.base_model import AddonsServiceBaseModel
-from addon_service.configured_storage_addon.models import ConfiguredStorageAddon
+from addon_service.configured_addon.computing.models import ConfiguredComputingAddon
+from addon_service.configured_addon.storage.models import ConfiguredStorageAddon
 from addon_service.resource_reference.models import ResourceReference
 
 
@@ -18,6 +21,12 @@ class UserReference(AddonsServiceBaseModel):
         )
 
     @property
+    def configured_computing_addons(self):
+        return ConfiguredComputingAddon.objects.filter(
+            base_account__account_owner=self,
+        )
+
+    @property
     def configured_resources(self):
         return ResourceReference.objects.annotate(
             has_addon_configured_by_user=models.Exists(
@@ -27,6 +36,24 @@ class UserReference(AddonsServiceBaseModel):
                 )
             )
         ).filter(has_addon_configured_by_user=True)
+
+    @property
+    def authorized_storage_accounts(self):
+        return AuthorizedStorageAccount.objects.filter(
+            account_owner=self
+        ).select_related("external_service")
+
+    @property
+    def authorized_citation_accounts(self):
+        return AuthorizedCitationAccount.objects.filter(
+            account_owner=self
+        ).select_related("external_service")
+
+    @property
+    def authorized_computing_accounts(self):
+        return AuthorizedComputingAccount.objects.filter(
+            account_owner=self
+        ).select_related("external_service")
 
     class Meta:
         verbose_name = "User Reference"

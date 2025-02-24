@@ -4,9 +4,10 @@ import typing
 
 from addon_toolkit.cursor import OffsetCursor
 from addon_toolkit.interfaces import storage
+from addon_toolkit.interfaces.storage import ItemType
 
 
-class BoxDotComStorageImp(storage.StorageAddonImp):
+class BoxDotComStorageImp(storage.StorageAddonHttpRequestorImp):
     """storage on box.com
 
     see https://developer.box.com/reference/
@@ -22,6 +23,11 @@ class BoxDotComStorageImp(storage.StorageAddonImp):
             items=[await self.get_item_info(_box_root_id())],
             total_count=1,
         )
+
+    async def build_wb_config(self) -> dict:
+        return {
+            "folder": self.config.connected_root_id.split(":")[1],
+        }
 
     async def get_item_info(self, item_id: str) -> storage.ItemResult:
         async with self.network.GET(
@@ -69,8 +75,10 @@ def _make_item_id(item_type: storage.ItemType, item_id: str) -> str:
 
 def _parse_item_id(item_id: str) -> tuple[storage.ItemType, str]:
     try:
+        if not item_id:
+            return ItemType.FOLDER, "0"  # return root if empty
         (_type, _box_item_id) = item_id.split(":", maxsplit=1)
-        return (storage.ItemType(int(_type)), _box_item_id)
+        return (storage.ItemType(_type), _box_item_id)
     except ValueError:
         raise ValueError(
             f'expected id of format "typeint:id", e.g. "1:1235" (got "{item_id}")'

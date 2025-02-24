@@ -1,6 +1,8 @@
 import logging
 from pathlib import Path
 
+from celery.schedules import crontab
+
 from app import env
 
 
@@ -17,6 +19,20 @@ if env.SENTRY_DSN:
             dsn=env.SENTRY_DSN,
             environment=env.OSF_BASE_URL,
         )
+
+if env.NEW_RELIC_CONFIG_FILE:
+    try:
+        import newrelic.agent
+    except ImportError:
+        _logger.warning("NEW_RELIC_CONFIG_FILE defined but newrelic not installed!")
+    else:
+        try:
+            newrelic.agent.initialize(
+                config_file=env.NEW_RELIC_CONFIG_FILE,
+                environment=env.NEW_RELIC_ENVIRONMENT,
+            )
+        except Exception as err:
+            raise Exception(f"Unable to initialize newrelic! {err}")
 
 
 SECRET_KEY = env.SECRET_KEY
@@ -44,11 +60,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.DEBUG
+SILKY_PYTHON_PROFILER = env.SILKY_PYTHON_PROFILER
 
 USER_REFERENCE_COOKIE = env.OSF_AUTH_COOKIE_NAME
 OSF_BASE_URL = env.OSF_BASE_URL.rstrip("/")
 OSF_API_BASE_URL = env.OSF_API_BASE_URL.rstrip("/")
 ALLOWED_RESOURCE_URI_PREFIXES = {OSF_BASE_URL}
+SESSION_COOKIE_DOMAIN = env.SESSION_COOKIE_DOMAIN
+
 if DEBUG:
     # allow for local osf shenanigans
     ALLOWED_RESOURCE_URI_PREFIXES.update(
@@ -77,12 +96,8 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_json_api",
     "addon_service",
+    "django_celery_beat",
 ]
-
-if DEBUG:
-    # run under ASGI locally:
-    INSTALLED_APPS.insert(0, "daphne")  # django's reference asgi server
-    ASGI_APPLICATION = "app.asgi.application"
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
@@ -94,6 +109,16 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+# run under ASGI locally:
+INSTALLED_APPS.insert(0, "daphne")  # django's reference asgi server
+ASGI_APPLICATION = "app.asgi.application"
+
+if DEBUG and not env.TESTING:
+    # add django-silk to enable profiling
+    INSTALLED_APPS.append("silk")
+    MIDDLEWARE.insert(0, "silk.middleware.SilkyMiddleware")
+
 
 ROOT_URLCONF = "app.urls"
 
@@ -207,6 +232,10 @@ USE_TZ = True
 STATIC_ROOT = BASE_DIR / "static"
 STATIC_URL = "/static/"
 
+
+PROVIDER_ICONS_DIR = BASE_DIR / "addon_service" / "static" / "provider_icons"
+
+
 OSF_SENSITIVE_DATA_SECRET = env.OSF_SENSITIVE_DATA_SECRET
 OSF_SENSITIVE_DATA_SALT = env.OSF_SENSITIVE_DATA_SALT
 
@@ -217,3 +246,20 @@ OSF_SENSITIVE_DATA_SALT = env.OSF_SENSITIVE_DATA_SALT
 AMQP_BROKER_URL = env.AMQP_BROKER_URL
 OSF_BACKCHANNEL_QUEUE_NAME = env.OSF_BACKCHANNEL_QUEUE_NAME
 GV_QUEUE_NAME_PREFIX = env.GV_QUEUE_NAME_PREFIX
+
+# Celery Beat
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+CELERY_BEAT_SCHEDULE = {
+    "refresh_addon_tokens": {
+        "task": "addon_service.management.commands.refresh_addon_tokens.refresh_addon_tokens",
+        "schedule": crontab(minute=0, hour=7),  # Daily 2:00 a.m,
+        "kwargs": {
+            "fake": False,
+            "addons": {
+                "box": 60,  # https://docs.box.com/docs/oauth-20#section-6-using-the-access-and-refresh-tokens
+                "googledrive": 14,  # https://developers.google.com/identity/protocols/OAuth2#expiration
+                "mendeley": 14,  # http://dev.mendeley.com/reference/topics/authorization_overview.html
+            },
+        },
+    },
+}

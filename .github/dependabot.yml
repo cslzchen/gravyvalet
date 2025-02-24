@@ -4,7 +4,7 @@
 version: 2
 updates:
   # python dependencies
-  - package-ecosystem: "pip"
+  - package-ecosystem: "poetry"
     directory: "/requirements/"
     schedule:
       interval: "daily"

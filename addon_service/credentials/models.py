@@ -17,7 +17,8 @@ class ExternalCredentials(AddonsServiceBaseModel):
     _scrypt_parallelization = models.IntegerField()
 
     # Attributes inherited from back-references:
-    # authorized_storage_account (AuthorizedStorageAccount._credentials, One2One)
+    # storage (AuthorizedStorageAccount._credentials, One2One)
+    # FIXME: Where is citation and computing?
 
     class Meta:
         verbose_name = "External Credentials"
@@ -90,20 +91,20 @@ class ExternalCredentials(AddonsServiceBaseModel):
     def authorized_accounts(self):
         """Returns the list of all accounts that point to this set of credentials.
 
-        For now, this will just be a single AuthorizedStorageAccount, but in the future
-        other types of accounts for the same user could point to the same set of credentials
+        For now, this will just be a single AuthorizedAccount, but in the future other
+        types of accounts for the same user could point to the same set of credentials
         """
         try:
             return [
                 *filter(
                     bool,
                     [
-                        getattr(self, "authorized_storage_account", None),
-                        getattr(self, "temporary_authorized_storage_account", None),
+                        getattr(self, "authorized_account", None),
+                        getattr(self, "temporary_authorized_account", None),
                     ],
                 )
             ]
-        except ExternalCredentials.authorized_storage_account.RelatedObjectDoesNotExist:
+        except ExternalCredentials.authorized_account.RelatedObjectDoesNotExist:
             return None
 
     @property

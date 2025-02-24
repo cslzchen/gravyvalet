@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import admin
 from django.urls import (
     include,
@@ -15,3 +16,6 @@ urlpatterns = [
         name="docs-root",
     ),
 ]
+
+if "silk" in settings.INSTALLED_APPS:
+    urlpatterns.append(path("silk/", include("silk.urls", namespace="silk")))

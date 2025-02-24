@@ -91,6 +91,7 @@ async def has_osf_permission_on_resource(
         params={
             "resolve": "f",  # do not redirect to the referent
             "embed": "referent",  # instead, include the referent in the response
+            "fields[nodes]": "current_user_permissions",
         },
         headers=[
             *_get_osf_auth_headers(request),

@@ -24,7 +24,6 @@ __all__ = (
     "typed_value_from_json",
 )
 
-
 ###
 # building jsonschema
 
@@ -177,6 +176,10 @@ class JsonschemaObjectBuilder:
             return {"type": "string"}
         if _type in (int, float):
             return {"type": "number"}
+        if _type is dict:
+            return {"type": "dict"}
+        if _type is bool:
+            return {"type": "bool"}
         raise exceptions.TypeNotJsonable(_type)
 
 
@@ -207,6 +210,8 @@ def json_for_typed_value(
         if not _is_optional:
             raise exceptions.ValueNotJsonableWithType(value, type_annotation)
         return None
+    if _type is typing.Any:
+        return value
     if dataclasses.is_dataclass(_type):
         if isinstance(value, dict):
             return json_for_kwargs(_type, value)
@@ -217,11 +222,23 @@ def json_for_typed_value(
         if value not in _type:
             raise exceptions.ValueNotJsonableWithType(value, _type)
         return value.name
-    if _type in (str, int, float):  # check str before abc.Collection
+    if _type in (str, int, float, bool):  # check str before abc.Collection
         if not isinstance(value, (str, int, float)):
             raise exceptions.ValueNotJsonableWithType(value, _type)
         assert issubclass(_type, (str, int, float))  # assertion for type-checker
         return _type(value)
+    if _type is dict:
+        if isinstance(value, dict):
+            return {k: json_for_typed_value(typing.Any, v) for k, v in value.items()}
+        raise exceptions.ValueNotJsonableWithType(value, _type)
+
+    if _type is list:
+        if isinstance(value, list):
+            return [
+                json_for_typed_value(_contained_type or typing.Any, _item_value)
+                for _item_value in value
+            ]
+        raise exceptions.ValueNotJsonableWithType(value, _type)
     if (
         isinstance(_type, type)
         and issubclass(_type, abc.Collection)
@@ -309,7 +326,7 @@ def typed_value_from_json(
             raise exceptions.JsonValueInvalidForType(json_value, _type)
         return dataclass_from_json(_type, json_value)
     if isinstance(_type, type) and issubclass(_type, enum.Enum):
-        return _type(json_value)
+        return _type(json_value.lower() if isinstance(json_value, str) else json_value)
     if _type in (str, int, float):
         if not isinstance(json_value, _type):
             raise exceptions.JsonValueInvalidForType(json_value, _type)

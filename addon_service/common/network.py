@@ -29,8 +29,6 @@ if typing.TYPE_CHECKING:
 
 __all__ = ("GravyvaletHttpRequestor",)
 
-__all__ = ("GravyvaletHttpRequestor",)
-
 _logger = logging.getLogger(__name__)
 
 
@@ -49,11 +47,18 @@ class _AiohttpResponseInfo(HttpResponseInfo):
     def headers(self) -> Multidict:
         # TODO: allowed_headers config?
         _response = _PrivateResponse.get(self).aiohttp_response
-        return Multidict(_response.headers.items())
+        header_values = [
+            (str(key), str(value)) for key, value in _response.headers.items()
+        ]
+        return Multidict(header_values)
 
     async def json_content(self) -> typing.Any:
         _response = _PrivateResponse.get(self).aiohttp_response
         return await _response.json()
+
+    async def text_content(self) -> str:
+        _response = _PrivateResponse.get(self).aiohttp_response
+        return await _response.text()
 
 
 class GravyvaletHttpRequestor(HttpRequestor):
@@ -78,7 +83,9 @@ class GravyvaletHttpRequestor(HttpRequestor):
             async with self._try_send(request) as _response:
                 yield _response
         except exceptions.ExpiredAccessToken:
-            await _PrivateNetworkInfo.get(self).account.refresh_oauth2_access_token()
+            await _PrivateNetworkInfo.get(self).account.refresh_oauth2_access_token(
+                force=True
+            )
             # if this one fails, don't try refreshing again
             async with self._try_send(request) as _response:
                 yield _response
@@ -88,18 +95,25 @@ class GravyvaletHttpRequestor(HttpRequestor):
         _private = _PrivateNetworkInfo.get(self)
         _url = _private.get_full_url(request.uri_path)
         _logger.info(f"sending {request.http_method} to {_url}")
+
+        default_headers = await _private.get_headers()
+
+        combined_headers = Multidict(default_headers.items())
+        combined_headers.add_many(request.headers.items())
+
         async with _private.client_session.request(
             request.http_method,
             _url,
-            headers=await _private.get_headers(),
-            # TODO: content
+            headers=combined_headers,
+            params=request.query,
+            json=request.json,
+            data=request.content,
         ) as _response:
             if (
                 _response.status == HTTPStatus.UNAUTHORIZED
                 and _private.account.credentials_format == CredentialsFormats.OAUTH2
             ):
-                # assume unauthorized because of token expiration.
-                # if not, will fail again after refresh (which is fine)
+                # Assume unauthorized because of token expiration.
                 raise exceptions.ExpiredAccessToken
             yield _AiohttpResponseInfo(_response)
 
@@ -158,7 +172,11 @@ class _PrivateNetworkInfo(_PrivateInfo):
         _headers = Multidict()
         _credentials = self.account.credentials
         if _credentials:
-            _headers.add_many(self.account.credentials.iter_headers())
+            _headers.add_many(
+                self.account.external_service.credentials_format.iter_headers(
+                    _credentials
+                )
+            )
         return _headers
 
     def get_full_url(self, relative_url: str) -> str:

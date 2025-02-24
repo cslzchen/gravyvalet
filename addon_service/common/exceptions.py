@@ -4,3 +4,11 @@ class AddonServiceException(Exception):
 
 class ExpiredAccessToken(AddonServiceException):
     pass
+
+
+class ItemNotFound(AddonServiceException):
+    pass
+
+
+class UnexpectedAddonError(AddonServiceException):
+    pass

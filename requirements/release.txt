@@ -1,4 +1,0 @@
--r ./requirements.txt
-
-# Requirements to be installed on server deployments
-sentry-sdk==2.7.1

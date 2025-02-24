@@ -1,4 +1,5 @@
 import dataclasses
+import urllib.parse
 from http import HTTPStatus
 from secrets import token_urlsafe
 from typing import Iterable
@@ -70,6 +71,7 @@ async def get_initial_access_token(
 
     see https://www.rfc-editor.org/rfc/rfc6749.html#section-4.1.3
     """
+
     return await _token_request(
         token_endpoint_url,
         {
@@ -103,7 +105,12 @@ async def get_refreshed_access_token(
     }
     if scopes:
         _refresh_params["scope"] = _SCOPE_DELIMITER.join(scopes)
-    return await _token_request(token_endpoint_url, _refresh_params)
+    result = await _token_request(token_endpoint_url, _refresh_params)
+
+    # If refresh token is not returned, use previous refresh token
+    if not result.refresh_token:
+        result.refresh_token = refresh_token
+    return result
 
 
 ###
@@ -115,6 +122,13 @@ async def _token_request(
 ) -> FreshTokenResult:
     _client = await get_singleton_client_session()
     async with _client.post(token_endpoint_url, data=request_body) as _token_response:
+        if _token_response.content_type == "application/x-www-form-urlencoded":
+            response_text = await _token_response.text()
+            response_data = dict(urllib.parse.parse_qsl(response_text))
+            if expires := response_data.get("expires_in"):
+                response_data["expires_in"] = int(expires)
+
+            return FreshTokenResult.from_token_response_json(response_data)
         if not HTTPStatus(_token_response.status).is_success:
             raise RuntimeError(await _token_response.json())
             # TODO: https://www.rfc-editor.org/rfc/rfc6749.html#section-5.2

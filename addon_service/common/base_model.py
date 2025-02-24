@@ -14,11 +14,12 @@ class AddonsServiceBaseModel(models.Model):
     created = models.DateTimeField(editable=False)
     modified = models.DateTimeField()
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, full_clean=True, **kwargs):
         if self._state.adding:
             self.created = timezone.now()
         self.modified = timezone.now()
-        self.full_clean()
+        if full_clean:
+            self.full_clean()
         super().save(*args, **kwargs)
 
     def __str__(self):
