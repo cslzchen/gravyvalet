@@ -174,7 +174,7 @@ class OwnCloudStorageImp(storage.StorageAddonHttpRequestorImp):
             folder_path = subpath.strip("/")
 
         return {
-            "folder": folder_path,
+            "folder": f"/{folder_path}",
             "host": root_host,
             "verify_ssl": True,
         }
