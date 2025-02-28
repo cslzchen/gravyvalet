@@ -37,6 +37,12 @@ class DropboxStorageImp(storage.StorageAddonHttpRequestorImp):
                 "path": self.config.connected_root_id,
             },
         ) as _response:
+            if _response.http_status != 200:
+                error_content = await _response.text_content()
+                raise ValueError(
+                    f"Request failed with status {_response.http_status}: {error_content}"
+                )
+
             content = await _response.json_content()
 
             if "error" in content:
