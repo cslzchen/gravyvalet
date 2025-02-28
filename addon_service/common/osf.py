@@ -120,7 +120,6 @@ def _make_guid_query_params(request):
         "fields[nodes]": "current_user_permissions",
     }
     if view_only := request.GET.get("view_only"):
-        print("GETTING VIEW ONLY")
         params["view_only"] = view_only
     return params
 
