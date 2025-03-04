@@ -136,7 +136,11 @@ class AuthorizedAccount(AddonsServiceBaseModel):
                 f"Got credentials of type {creds_type}."
             )
         if not getattr(self, credentials_field, None):
-            setattr(self, credentials_field, ExternalCredentials.new())
+            setattr(
+                self,
+                credentials_field,
+                ExternalCredentials.new(credential_format=self.credentials_format),
+            )
         try:
             creds = getattr(self, credentials_field)
             creds.decrypted_credentials = credentials_data
