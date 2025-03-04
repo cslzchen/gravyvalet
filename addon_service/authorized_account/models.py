@@ -51,7 +51,7 @@ class AuthorizedAccount(AddonsServiceBaseModel):
         on_delete=models.CASCADE,
         related_name="authorized_accounts",
     )
-    _credentials = models.OneToOneField(
+    _credentials = models.ForeignKey(
         "addon_service.ExternalCredentials",
         on_delete=models.CASCADE,
         primary_key=False,
