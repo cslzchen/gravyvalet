@@ -11,49 +11,22 @@ from addon_service.authorized_account.citation.models import AuthorizedCitationA
 from addon_service.authorized_account.computing.models import AuthorizedComputingAccount
 from addon_service.authorized_account.storage.models import AuthorizedStorageAccount
 from addon_service.osf_models.models import (
-    BitbucketNodeSettings,
-    BitbucketUserSettings,
-    BoxNodeSettings,
-    BoxUserSettings,
-    DropboxNodeSettings,
-    DropboxUserSettings,
     ExternalAccount,
-    FigshareNodeSettings,
-    FigshareUserSettings,
-    GithubNodeSettings,
-    GithubUserSettings,
-    GoogleDriveNodeSettings,
-    GoogleDriveUserSettings,
-    MendeleyNodeSettings,
-    MendeleyUserSettings,
-    OneDriveNodeSettings,
-    OneDriveUserSettings,
     UserToExternalAccount,
 )
 
 
 logger = logging.getLogger(__name__)
 
-
-def fetch_external_accounts(user_id: int, provider: str):
-    return [
-        obj.externalaccount
-        for obj in UserToExternalAccount.objects.select_related(
-            "externalaccount"
-        ).filter(osfuser_id=user_id)
-        if obj.externalaccount.provider == provider
-    ]
-
-
 services = {
-    "dropbox": ["storage", DropboxUserSettings, DropboxNodeSettings],
-    "bitbucket": ["storage", BitbucketUserSettings, BitbucketNodeSettings],
-    "box": ["storage", BoxUserSettings, BoxNodeSettings],
-    "github": ["storage", GithubUserSettings, GithubNodeSettings],
-    "googledrive": ["storage", GoogleDriveUserSettings, GoogleDriveNodeSettings],
-    "figshare": ["storage", FigshareUserSettings, FigshareNodeSettings],
-    "onedrive": ["storage", OneDriveUserSettings, OneDriveNodeSettings],
-    "mendeley": ["citations", MendeleyUserSettings, MendeleyNodeSettings],
+    "dropbox": "storage",
+    "bitbucket": "storage",
+    "box": "storage",
+    "github": "storage",
+    "googledrive": "storage",
+    "figshare": "storage",
+    "onedrive": "storage",
+    "mendeley": "citations",
 }
 
 
@@ -69,6 +42,9 @@ def get_class(integration_type):
 
 
 class Command(BaseCommand):
+    def add_arguments(self, parser):
+        parser.add_argument("--fake", action="store_true")
+
     @transaction.atomic
     def handle(self, *args, **options):
         shared_ids = (
@@ -81,7 +57,7 @@ class Command(BaseCommand):
             provider__in=services.keys(),
         )
         for account in shared_accounts:
-            integration_type = services[account.provider][0]
+            integration_type = services[account.provider]
             AuthorizedAccount = get_class(integration_type)
             accounts = (
                 AuthorizedAccount.objects.filter(
@@ -94,8 +70,12 @@ class Command(BaseCommand):
                     )
                 )
             )
+            # take the first account here because it has the most recently refreshed credentials,
+            # and update all credentials/token metadata with first_account's ones
             token_metadata = accounts[0].oauth2_token_metadata
             credentials = accounts[0]._credentials
             accounts.update(
                 oauth2_token_metadata=token_metadata, _credentials=credentials
             )
+        if options.get("fake"):
+            transaction.set_rollback(True)
