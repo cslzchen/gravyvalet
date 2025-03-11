@@ -60,12 +60,7 @@ class AuthorizedStorageAccountSerializer(AuthorizedAccountSerializer):
     configured_storage_addons_uris = serializers.SerializerMethodField()
 
     def get_configured_storage_addons_uris(self, obj):
-        return obj.configured_storage_addons.select_related(
-            'authorized_resource'
-        ).values_list(
-            'authorized_resource__resource_uri',
-            flat=True
-        )
+        return obj.configured_storage_addons.values_list('authorized_resource__resource_uri', flat=True)
 
     class Meta:
         model = AuthorizedStorageAccount
