@@ -56,9 +56,9 @@ class AuthorizedCitationAccountSerializer(AuthorizedAccountSerializer):
         "authorized_operations": "addon_service.serializers.AddonOperationSerializer",
     }
 
-    configured_citation_addons_uris = serializers.SerializerMethodField()
+    configured_addons_uris = serializers.SerializerMethodField()
 
-    def get_configured_citation_addons_uris(self, obj):
+    def get_configured_addons_uris(self, obj):
         return obj.configured_citation_addons.values_list('authorized_resource__resource_uri', flat=True)
 
     class Meta:
@@ -79,5 +79,5 @@ class AuthorizedCitationAccountSerializer(AuthorizedAccountSerializer):
             "external_citation_service",
             "initiate_oauth",
             "credentials_available",
-            "configured_citation_addons_uris",
+            "configured_addons_uris",
         ]
