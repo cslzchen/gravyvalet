@@ -18,15 +18,15 @@ class TestGitHubStorageImp(unittest.IsolatedAsyncioTestCase):
         self.network = AsyncMock(spec_set=HttpRequestor)
         self.imp = GitHubStorageImp(config=self.config, network=self.network)
 
-    def _patch_get(self, return_value: dict):
+    def _patch_get(self, return_value: dict | list[dict]):
         mock = self.network.GET.return_value.__aenter__.return_value
         mock.json_content = AsyncMock(return_value=return_value)
         mock.http_status = 200
 
     def _assert_get(self, url: str, query: dict = None):
-        extra_params = {"query": query} if query else {}
-        if url == "repos/testuser/repo1/contents/":
-            extra_params = {"query": {}}
+        extra_params = {}
+        if query is not None:
+            extra_params["query"] = query
         self.network.GET.assert_called_once_with(url, **extra_params)
         self.network.GET.return_value.__aenter__.assert_awaited_once()
         self.network.GET.return_value.__aenter__.return_value.json_content.assert_awaited_once()
@@ -82,7 +82,7 @@ class TestGitHubStorageImp(unittest.IsolatedAsyncioTestCase):
         expected_result = ItemSampleResult(items=expected_items, total_count=2)
         self.assertEqual(result.items, expected_result.items)
         self.assertEqual(result.total_count, expected_result.total_count)
-        self._assert_get("user/repos")
+        self._assert_get("user/repos", {"page": "1", "per_page": "30"})
 
     async def test_get_item_info_root(self):
         result = await self.imp.get_item_info(".")
@@ -162,4 +162,6 @@ class TestGitHubStorageImp(unittest.IsolatedAsyncioTestCase):
         expected_result = ItemSampleResult(items=expected_items, total_count=2)
         self.assertEqual(result.items, expected_result.items)
         self.assertEqual(result.total_count, expected_result.total_count)
-        self._assert_get("repos/testuser/repo1/contents/")
+        self._assert_get(
+            "repos/testuser/repo1/contents/", {"page": "1", "per_page": "30"}
+        )
