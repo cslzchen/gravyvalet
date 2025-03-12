@@ -262,4 +262,8 @@ CELERY_BEAT_SCHEDULE = {
             },
         },
     },
+    "clear_expired_sessions": {
+        "task": "addon_service.tasks.clear_expired_sessions.clear_expired_sessions",
+        "schedule": crontab(minute=0, hour=7),  # Daily midnight,
+    },
 }
