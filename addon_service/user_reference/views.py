@@ -3,7 +3,6 @@ from addon_service.common.viewsets import RestrictedReadOnlyViewSet
 
 from .models import UserReference
 from .serializers import UserReferenceSerializer
-from ..common.uri_filter import URIFilter
 
 
 class UserReferenceViewSet(RestrictedReadOnlyViewSet):
@@ -12,6 +11,6 @@ class UserReferenceViewSet(RestrictedReadOnlyViewSet):
     permission_classes = [
         SessionUserIsOwner,
     ]
-    filter_backends = [URIFilter]
+    allowed_query_params = ['uris']
     # Satisfies requirements of `RestrictedReadOnlyViewSet.list`
     required_list_filter_fields = ("user_uri",)
