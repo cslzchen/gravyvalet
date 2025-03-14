@@ -14,7 +14,7 @@ class AllowedQueryParamsFilter(QueryParameterValidationFilter):
     def filter_queryset(self, request, queryset, view):
         query_params_to_remove = {}
         # our custom query params just should be listed in allowed_query_params
-        if hasattr(view, 'allowed_query_params'):
+        if hasattr(view, "allowed_query_params"):
             for query_param, value in request.query_params.items():
                 if query_param in view.allowed_query_params:
                     query_params_to_remove[query_param] = value

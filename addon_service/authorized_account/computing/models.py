@@ -27,10 +27,12 @@ class AuthorizedComputingAccount(AuthorizedAccount):
         )
         self.external_account_id = await imp.get_external_account_id(auth_extras or {})
         await self.asave()
-    
+
     @property
     def configured_computing_addons(self):
-        return ConfiguredComputingAddon.objects.filter(base_account=self).select_related('authorized_resource')
+        return ConfiguredComputingAddon.objects.filter(
+            base_account=self
+        ).select_related('authorized_resource')
 
     @property
     def config(self) -> ComputingConfig:

@@ -31,10 +31,12 @@ class AuthorizedCitationAccount(AuthorizedAccount):
         )
         self.external_account_id = await imp.get_external_account_id(auth_extras or {})
         await self.asave()
-    
+
     @property
     def configured_citation_addons(self):
-        return ConfiguredCitationAddon.objects.filter(base_account=self).select_related('authorized_resource')
+        return ConfiguredCitationAddon.objects.filter(base_account=self).select_related(
+            'authorized_resource'
+        )
 
     @property
     def config(self) -> CitationConfig:

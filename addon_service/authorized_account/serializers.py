@@ -37,7 +37,7 @@ class AuthorizedAccountSerializer(serializers.HyperlinkedModelSerializer):
         # Check if it's a POST request and remove the field as it's not in our FE spec
         if kwargs["context"]["request"].method == "POST":
             self.fields.pop("configured_storage_addons", None)
-        
+
         if kwargs["context"]["request"].query_params.get('uris') != "true":
             self.fields.pop("configured_addons_uris")
 

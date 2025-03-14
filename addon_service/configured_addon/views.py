@@ -9,7 +9,7 @@ from addon_service.common.viewsets import RetrieveWriteDeleteViewSet
 
 
 class ConfiguredAddonViewSet(RetrieveWriteDeleteViewSet):
-    allowed_query_params = ['view_only']
+    allowed_query_params = ["view_only"]
 
     def get_permissions(self):
         match self.action:

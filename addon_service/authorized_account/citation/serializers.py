@@ -59,7 +59,9 @@ class AuthorizedCitationAccountSerializer(AuthorizedAccountSerializer):
     configured_addons_uris = serializers.SerializerMethodField()
 
     def get_configured_addons_uris(self, obj):
-        return obj.configured_citation_addons.values_list('authorized_resource__resource_uri', flat=True)
+        return obj.configured_citation_addons.values_list(
+            'authorized_resource__resource_uri', flat=True
+        )
 
     class Meta:
         model = AuthorizedCitationAccount
