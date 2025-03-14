@@ -5,6 +5,7 @@ from addon_service.common.permissions import (
     SessionUserIsOwnerOrResourceAdmin,
     SessionUserMayConnectAddon,
 )
+from addon_service.common.view_only_filter import ViewOnlyFilter
 from addon_service.common.viewsets import RetrieveWriteDeleteViewSet
 
 
