@@ -32,7 +32,7 @@ class AuthorizedComputingAccount(AuthorizedAccount):
     def configured_computing_addons(self):
         return ConfiguredComputingAddon.objects.filter(
             base_account=self
-        ).select_related('authorized_resource')
+        ).select_related("authorized_resource")
 
     @property
     def config(self) -> ComputingConfig:

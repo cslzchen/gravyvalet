@@ -38,7 +38,7 @@ class AuthorizedAccountSerializer(serializers.HyperlinkedModelSerializer):
         if kwargs["context"]["request"].method == "POST":
             self.fields.pop("configured_storage_addons", None)
 
-        if kwargs["context"]["request"].query_params.get('uris') != "true":
+        if kwargs["context"]["request"].query_params.get("uris") != "true":
             self.fields.pop("configured_addons_uris")
 
     display_name = serializers.CharField(

@@ -25,7 +25,7 @@ class AuthorizedStorageAccount(AuthorizedAccount):
     @property
     def configured_storage_addons(self):
         return ConfiguredStorageAddon.objects.filter(base_account=self).select_related(
-            'authorized_resource'
+            "authorized_resource"
         )
 
     @property

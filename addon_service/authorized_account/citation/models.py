@@ -35,7 +35,7 @@ class AuthorizedCitationAccount(AuthorizedAccount):
     @property
     def configured_citation_addons(self):
         return ConfiguredCitationAddon.objects.filter(base_account=self).select_related(
-            'authorized_resource'
+            "authorized_resource"
         )
 
     @property
