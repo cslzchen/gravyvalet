@@ -31,7 +31,7 @@ class AuthorizedAccountSerializer(serializers.HyperlinkedModelSerializer):
                 f"{self.__class__.__name__} requires {self.REQUIRED_FIELDS} to be instantiated"
             )
 
-        if not "context" in kwargs:
+        if "context" not in kwargs:
             return
 
         # Check if it's a POST request and remove the field as it's not in our FE spec
