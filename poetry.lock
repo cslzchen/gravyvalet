@@ -881,19 +881,19 @@ django = ">=4.2"
 
 [[package]]
 name = "djangorestframework-jsonapi"
-version = "6.1.0"
+version = "7.1.0"
 description = "A Django REST framework API adapter for the JSON:API spec."
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "djangorestframework-jsonapi-6.1.0.tar.gz", hash = "sha256:237a6ed3780f0b6571c838c33fde57286152166213ad2986cb1d0f45cff45425"},
-    {file = "djangorestframework_jsonapi-6.1.0-py2.py3-none-any.whl", hash = "sha256:d35fc0868ef104038882203da160c7b51216dec3f4e089cd5177bb95f9fe4af1"},
+    {file = "djangorestframework_jsonapi-7.1.0-py2.py3-none-any.whl", hash = "sha256:506d7179b6c2d29c4b7879afb4cadf8b0bb468accd40787491875ad680b4993a"},
+    {file = "djangorestframework_jsonapi-7.1.0.tar.gz", hash = "sha256:487e4fe5a0590e655cb3af947c8cee7b54be8ced14a81aac53056f2c43a92343"},
 ]
 
 [package.dependencies]
-django = ">=3.2"
-djangorestframework = ">=3.13"
+django = ">=4.2"
+djangorestframework = ">=3.14"
 inflection = ">=0.5.0"
 
 [package.extras]
@@ -2623,4 +2623,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "5b31e1c5cc5d5d3b73e12a9b431759fcf19992a3a4c8645c9d18df2a153c99df"
+content-hash = "ac7880f6509ad1faafe819a2157f1303dd0d2b568f1db63d8086ee26a199ba07"
