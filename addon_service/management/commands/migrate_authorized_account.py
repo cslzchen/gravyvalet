@@ -243,7 +243,7 @@ class Command(BaseCommand):
                     f"Skipping account migration with {osf_account.pk=} for service {external_service.display_name} "
                     f"due to credentials parse error {e=}"
                 )
-                return
+                continue
             user_uri = f"{OSF_BASE}/{user.guid}"
             account_owner = UserReference.objects.get_or_create(user_uri=user_uri)
             account = AuthorizedAccount(
@@ -281,6 +281,11 @@ class Command(BaseCommand):
                 resource_uri=f"{OSF_BASE}/{node_guid}"
             )[0]
             base_account = account_map.get(node_settings.external_account.id)
+            if not base_account:
+                logger.error(
+                    f"Cannot find authorized account with {node_settings.external_account.id} for user {user.id}"
+                )
+                continue
             configured_addon = ConfiguredAddon(
                 int_connected_capabilities=(
                     AddonCapabilities.UPDATE | AddonCapabilities.ACCESS

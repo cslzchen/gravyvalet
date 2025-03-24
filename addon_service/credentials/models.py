@@ -101,8 +101,7 @@ class ExternalCredentials(AddonsServiceBaseModel):
     def authorized_accounts(self):
         """Returns the list of all accounts that point to this set of credentials.
 
-        For now, this will just be a single AuthorizedAccount, but in the future other
-        types of accounts for the same user could point to the same set of credentials
+        This includes temporary oauth1 credentials which are needed during oauth1 flow
         """
         try:
             return [

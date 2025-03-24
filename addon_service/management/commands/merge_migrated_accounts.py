@@ -63,7 +63,9 @@ class Command(BaseCommand):
                 AuthorizedAccount.objects.filter(
                     external_account_id=account.provider_id,
                 )
-                .select_related("oauth2_token_metadata", "_credentials")
+                .select_related(
+                    "oauth2_token_metadata", "_credentials", "external_service"
+                )
                 .order_by(
                     F("oauth2_token_metadata__date_last_refreshed").desc(
                         nulls_last=True
@@ -72,8 +74,12 @@ class Command(BaseCommand):
             )
             # take the first account here because it has the most recently refreshed credentials,
             # and update all credentials/token metadata with first_account's ones
-            token_metadata = accounts[0].oauth2_token_metadata
-            credentials = accounts[0]._credentials
+            account = accounts[0]
+            token_metadata = accounts.oauth2_token_metadata
+            credentials = accounts._credentials
+            logger.info(
+                f"Merging accounts that point to {account.external_service.external_service_name} with id {account.id}"
+            )
             accounts.update(
                 oauth2_token_metadata=token_metadata, _credentials=credentials
             )
