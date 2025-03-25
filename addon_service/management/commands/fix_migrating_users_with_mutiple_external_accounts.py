@@ -212,12 +212,14 @@ def get_or_create_authorized_account(external_account, provider, user_guid):
             credentials=credentials,
             external_account_id=external_account.provider_id,
         )
+        print(f"\t\t\t\t Created AuthorizedAccount on {provider} for user {user_guid}")
     else:
         authorized_account = AuthorizedAccount.objects.get(
             external_account_id=external_account.id,
             external_service=external_service,
             account_owner=account_owner,
         )
+        print(f"\t\t\t\t Found AuthorizedAccount on {provider} for user {user_guid}")
 
     return authorized_account
 
@@ -231,6 +233,10 @@ def configured_addon_has_correct_base_account(external_account, node_guid, provi
         == external_account.provider_id
     ):
         return True
+    print("\t\t\t Mismatch found:")
+    print(
+        f"\t\t\t\t ConfiguredAddon for node {node_guid} has base account external_account_id={configured_addon.base_account.external_account_id}, it should be {external_account.provider_id}"
+    )
     return False
 
 
@@ -238,10 +244,12 @@ def fix_migration_for_user_and_provider(user_guid, provider):
     if not user_guid:
         return
 
-    for node_settings in get_node_settings_for_user_and_provider(user_guid, provider):
+    ns = get_node_settings_for_user_and_provider(user_guid, provider)
+    print(f"\t Found {ns.count} NodeSettings for user {user_guid} on {provider}")
+    for node_settings in ns:
         external_account = node_settings.external_account
         node_guid = get_node_guid(node_settings.owner_id)
-
+        print(f"\t\t Checking node setting for node {node_guid}")
         # check to see if the migrated configured_addon instance have the authorized account with the same external_account_id
         if not configured_addon_has_correct_base_account(
             external_account, node_guid, provider
@@ -253,6 +261,7 @@ def fix_migration_for_user_and_provider(user_guid, provider):
             )
             configured_addon.base_account = authorized_account
             configured_addon.save()
+            print(f"\t\t\t Fixed mismatch for {provider} on {node_guid}")
 
 
 class Command(BaseCommand):
@@ -265,6 +274,7 @@ class Command(BaseCommand):
         fake = options["fake"]
 
         for user_guid, provider in get_target_user_guids_and_provider():
+            print("Found multiple ExternalAccount on {provider} for user {user_guid}")
             fix_migration_for_user_and_provider(user_guid, provider)
         if fake:
             print("Rolling back the transactions because this is a fake run")
