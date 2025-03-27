@@ -28,6 +28,7 @@ from addon_service.osf_models.models import (
     OsfUser,
     OwnCloudUserSettings,
     S3UserSettings,
+    UserToExternalAccount,
     ZoteroUserSettings,
 )
 from addon_service.resource_reference.models import ResourceReference
@@ -142,20 +143,18 @@ def get_node_guid(id_):
 
 
 # return a list of tuples of (user_guid, provider_name_with_duplicate_accounts)
-def get_target_user_guids_and_provider():
+def get_target_user_pks_and_provider():
     return (
-        ExternalAccount.objects.values("osfuser__guids___id", "provider")
+        UserToExternalAccount.objects.values("osfuser_id", "externalaccount__provider")
         .annotate(account_per_provider=Count("id"))
         .filter(account_per_provider__gt=1)
-        .values_list("osfuser__guids___id", "provider")
+        .values_list("osfuser_id", "externalaccount__provider")
     )
 
 
-def get_node_settings_for_user_and_provider(user_guid, provider):
+def get_node_settings_for_user_and_provider(user, provider):
     UserSettings = provider_to_user_settings[provider]
-    user_setting = UserSettings.objects.get(
-        owner=OsfUser.objects.get(guids___id=user_guid)
-    )
+    user_setting = UserSettings.objects.get(owner_id=user.id)
     return getattr(user_setting, f"{provider}nodesettings_set").all()
 
 
@@ -240,12 +239,12 @@ def configured_addon_has_correct_base_account(external_account, node_guid, provi
     return False
 
 
-def fix_migration_for_user_and_provider(user_guid, provider):
-    if not user_guid:
+def fix_migration_for_user_and_provider(user, provider):
+    if not user:
         return
 
-    ns = get_node_settings_for_user_and_provider(user_guid, provider)
-    print(f"\t Found {ns.count} NodeSettings for user {user_guid} on {provider}")
+    ns = get_node_settings_for_user_and_provider(user, provider)
+    print(f"\t Found {ns.count()} NodeSettings for user {user.guid} on {provider}")
     for node_settings in ns:
         external_account = node_settings.external_account
         node_guid = get_node_guid(node_settings.owner_id)
@@ -257,7 +256,7 @@ def fix_migration_for_user_and_provider(user_guid, provider):
             # if not, then we fix it
             configured_addon = get_configured_addon(node_guid, provider)
             authorized_account = get_or_create_authorized_account(
-                external_account, provider, user_guid
+                external_account, provider, user.guid
             )
             configured_addon.base_account = authorized_account
             configured_addon.save()
@@ -273,9 +272,12 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         fake = options["fake"]
 
-        for user_guid, provider in get_target_user_guids_and_provider():
-            print("Found multiple ExternalAccount on {provider} for user {user_guid}")
-            fix_migration_for_user_and_provider(user_guid, provider)
+        for user_pk, provider in get_target_user_pks_and_provider():
+            user = OsfUser.objects.get(pk=user_pk)
+            print(f"Found multiple ExternalAccount on {provider} for user {user.guid}")
+            if provider != "boa":
+                # We don't need to fix boa
+                fix_migration_for_user_and_provider(user, provider)
         if fake:
             print("Rolling back the transactions because this is a fake run")
             transaction.set_rollback(True)
