@@ -114,3 +114,22 @@ class AddonImpNumbers(enum.Enum):
 
     if __debug__:
         BLARG = -7
+
+
+StorageAddonImpNumbers = frozenset(
+    {
+        AddonImpNumbers.BOX,
+        AddonImpNumbers.S3,
+        AddonImpNumbers.GOOGLEDRIVE,
+        AddonImpNumbers.DROPBOX,
+        AddonImpNumbers.FIGSHARE,
+        AddonImpNumbers.ONEDRIVE,
+        AddonImpNumbers.OWNCLOUD,
+        AddonImpNumbers.DATAVERSE,
+        AddonImpNumbers.GITLAB,
+        AddonImpNumbers.BITBUCKET,
+        AddonImpNumbers.GITHUB,
+    }
+)
+CitationAddonImpNumbers = frozenset({AddonImpNumbers.ZOTERO, AddonImpNumbers.MENDELEY})
+ComputingAddonImpNumbers = frozenset({AddonImpNumbers.BOA})
