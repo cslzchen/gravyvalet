@@ -90,8 +90,8 @@ class KnownAddonImps(enum.Enum):
         BLARG = my_blarg.MyBlargStorage
 
 
-@enum.unique
 @enum_names_same_as(KnownAddonImps)
+@enum.unique
 class AddonImpNumbers(enum.Enum):
     """Static mapping from each AddonImp name to a unique integer (for database use)"""
 

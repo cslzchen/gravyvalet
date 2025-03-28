@@ -1,2 +1,2 @@
-"""addon_service.external_service.storage: represents a third-party storage service
+"""addon_service.external_service.link: represents a third-party link service
 """
