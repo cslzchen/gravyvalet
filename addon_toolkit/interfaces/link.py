@@ -1,5 +1,7 @@
 """a static (and still in progress) definition of what composes a link addon"""
 
+from __future__ import annotations
+
 import dataclasses
 import enum
 import typing
@@ -14,6 +16,9 @@ from addon_toolkit.imp import AddonImp
 
 from ._base import BaseAddonInterface
 
+
+if typing.TYPE_CHECKING:
+    from addon_service.external_service.link.models import SupportedResourceTypes
 
 __all__ = (
     "ItemResult",
@@ -34,6 +39,7 @@ class ItemResult:
     item_id: str
     item_name: str
     item_type: ItemType
+    resource_type: SupportedResourceTypes
     item_link: str | None = None
 
 
