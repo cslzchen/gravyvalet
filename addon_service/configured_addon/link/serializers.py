@@ -52,7 +52,7 @@ class ConfiguredLinkAddonSerializer(ConfiguredAddonSerializer):
     )
 
     included_serializers = {
-        "base_account": ("addon_service.serializers.AuthorizedLinkAccountSerializer"),
+        "base_account": "addon_service.serializers.AuthorizedLinkAccountSerializer",
         "external_link_service": "addon_service.serializers.ExternalLinkServiceSerializer",
         "authorized_resource": "addon_service.serializers.ResourceReferenceSerializer",
         "connected_operations": "addon_service.serializers.AddonOperationSerializer",
