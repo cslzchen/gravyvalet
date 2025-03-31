@@ -1,7 +1,5 @@
 """a static (and still in progress) definition of what composes a link addon"""
 
-from __future__ import annotations
-
 import dataclasses
 import enum
 import typing
@@ -17,9 +15,6 @@ from addon_toolkit.imp import AddonImp
 from ._base import BaseAddonInterface
 
 
-if typing.TYPE_CHECKING:
-    from addon_service.external_service.link.models import SupportedResourceTypes
-
 __all__ = (
     "ItemResult",
     "ItemType",
@@ -32,6 +27,20 @@ __all__ = (
 class ItemType(enum.StrEnum):
     FILE = enum.auto()
     FOLDER = enum.auto()
+
+
+class SupportedResourceTypes(enum.Flag):
+    ADD_UPDATE_FILES = enum.auto()
+    ADD_UPDATE_FILES_PARTIAL = enum.auto()
+    DELETE_FILES = enum.auto()
+    DELETE_FILES_PARTIAL = enum.auto()
+    FORKING = enum.auto()
+    LOGS = enum.auto()
+    PERMISSIONS = enum.auto()
+    REGISTERING = enum.auto()
+    FILE_VERSIONS = enum.auto()
+    COPY_INTO = enum.auto()
+    DOWNLOAD_AS_ZIP = enum.auto()
 
 
 @dataclasses.dataclass

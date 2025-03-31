@@ -1,8 +1,3 @@
-from enum import (
-    Flag,
-    auto,
-)
-
 from django.db import models
 
 from addon_service.authorized_account.link.models import AuthorizedLinkAccount
@@ -11,20 +6,7 @@ from addon_service.common.validators import (
     validate_link_imp_number,
 )
 from addon_service.external_service.models import ExternalService
-
-
-class SupportedResourceTypes(Flag):
-    ADD_UPDATE_FILES = auto()
-    ADD_UPDATE_FILES_PARTIAL = auto()
-    DELETE_FILES = auto()
-    DELETE_FILES_PARTIAL = auto()
-    FORKING = auto()
-    LOGS = auto()
-    PERMISSIONS = auto()
-    REGISTERING = auto()
-    FILE_VERSIONS = auto()
-    COPY_INTO = auto()
-    DOWNLOAD_AS_ZIP = auto()
+from addon_toolkit.interfaces.link import SupportedResourceTypes
 
 
 def validate_supported_features(value):
