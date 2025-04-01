@@ -54,6 +54,7 @@ To configure OAuth addons:
 2. Go to external service you want to configure (it is under **External *\<\<addon type\>\>* service**)
 3. After choosing service click on respective OAuth Client config
 4. There fill your client id and client secret (instructions to obtain them are [here](./services_setup_doc/README.md))
+5. Now you should be able to connect these addons according to existing user flows (in ordinary osf app)
 
 ## ...configure a good environment
 see `app/env.py` for details on all environment variables used.
