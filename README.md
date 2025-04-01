@@ -16,6 +16,7 @@ tho current docs may or may not be available at https://addons.staging.osf.io/do
 ## ...set up gravyvalet for local development with osf, using docker
 
 0. have [osf running](https://github.com/CenterForOpenScience/osf.io/blob/develop/README-docker-compose.md) (with its `api` at `http://192.168.168.167:8000`)
+   1. Ensure that `192.168.168.167` is in `ALLOWED_HOSTS` for your local OSF install. (If you have fresh install you can skip this step)
 1. Start your PostgreSQL and Django containers with `docker compose up -d`.
 2. Enter the Django container: `docker compose exec gravyvalet /bin/bash`.
 3. Migrate the existing models: `python manage.py migrate`.
@@ -31,7 +32,14 @@ python manage.py test
 (recommend adding `--failfast` when looking for immediate feedback)
 
 ## ...set up external services
-start by creating an admin account with
+Start by launching management command
+```bash
+python manage.py fill_external_services
+```
+This should fill all external services which are currently supported by OSF.
+
+They should be visible now in addons list on project and user page. Non-oauth addons should be in working state now, the only thing left is to configure each oauth addon credential
+Continue by creating an admin account with
 [django's createsuperuser command](https://docs.djangoproject.com/en/4.2/ref/django-admin/#django-admin-createsuperuser):
 
 ```bash
@@ -39,8 +47,13 @@ python manage.py createsuperuser
 ```
 
 then log in with that account at `localhost:8004/admin` to manage
-external services (including oauth config) and to create other admin users
+external services (including oauth config) and to create other admin users. 
 
+To configure OAuth addons:
+1. Open [admin](http://localhost:8004/admin/addon_service/) 
+2. Go to external service you want to configure (it is under **External *\<\<addon type\>\>* service**)
+3. After choosing service click on respective OAuth Client config
+4. There fill your client id and client secret (instructions to obtain them are [here](./services_setup_doc/README.md))
 
 ## ...configure a good environment
 see `app/env.py` for details on all environment variables used.
