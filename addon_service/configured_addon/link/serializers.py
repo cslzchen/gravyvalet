@@ -1,6 +1,5 @@
 from rest_framework.fields import (
     CharField,
-    IntegerField,
     URLField,
 )
 from rest_framework_json_api.relations import ResourceRelatedField
@@ -8,6 +7,7 @@ from rest_framework_json_api.utils import get_resource_type_from_model
 
 from addon_service.addon_operation.models import AddonOperationModel
 from addon_service.common import view_names
+from addon_service.common.enum_serializers import EnumNameChoiceField
 from addon_service.common.serializer_fields import DataclassRelatedLinkField
 from addon_service.configured_addon.serializers import ConfiguredAddonSerializer
 from addon_service.external_service.link.models import ExternalLinkService
@@ -15,6 +15,7 @@ from addon_service.models import (
     AuthorizedLinkAccount,
     ConfiguredLinkAddon,
 )
+from addon_toolkit.interfaces.link import SupportedResourceTypes
 
 
 RESOURCE_TYPE = get_resource_type_from_model(ConfiguredLinkAddon)
@@ -25,7 +26,7 @@ class ConfiguredLinkAddonSerializer(ConfiguredAddonSerializer):
 
     target_uri = URLField()
     target_id = CharField()
-    int_resource_type = IntegerField()
+    resource_type = EnumNameChoiceField(enum_cls=SupportedResourceTypes)
 
     connected_operations = DataclassRelatedLinkField(
         dataclass_model=AddonOperationModel,
@@ -75,4 +76,7 @@ class ConfiguredLinkAddonSerializer(ConfiguredAddonSerializer):
             "external_link_service",
             "current_user_is_owner",
             "external_service_name",
+            "resource_type",
+            "target_uri",
+            "target_id",
         ]
