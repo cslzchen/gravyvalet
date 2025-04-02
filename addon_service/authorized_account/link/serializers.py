@@ -20,7 +20,7 @@ from addon_service.models import (
 )
 
 
-RESOURCE_TYPE = get_resource_type_from_model(AuthorizedStorageAccount)
+RESOURCE_TYPE = get_resource_type_from_model(AuthorizedLinkAccount)
 
 
 class AuthorizedLinkAccountSerializer(AuthorizedAccountSerializer):

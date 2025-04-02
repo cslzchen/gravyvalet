@@ -84,7 +84,7 @@ class AddonOperationInvocationViewSet(RetrieveWriteViewSet):
                 serializer = ConfiguredComputingAddonSerializer(
                     instance, context={"request": request}
                 )
-            elif hasattr(instance, "configuredcomputingaddon"):
+            elif hasattr(instance, "configuredlinkaddon"):
                 serializer = ConfiguredLinkAddonSerializer(
                     instance, context={"request": request}
                 )
