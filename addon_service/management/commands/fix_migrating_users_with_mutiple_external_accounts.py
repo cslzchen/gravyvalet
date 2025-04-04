@@ -162,6 +162,7 @@ def get_configured_addon(node_guid, provider):
     resource_reference = ResourceReference.objects.get_or_create(
         resource_uri=f"{OSF_BASE}/{node_guid}"
     )[0]
+    external_service = get_external_service(provider)
     if provider in storage_provider:
         ConfiguredAddon = ConfiguredStorageAddon
     elif provider in citation_provider:
@@ -169,7 +170,8 @@ def get_configured_addon(node_guid, provider):
 
     try:
         configured_addon = ConfiguredAddon.objects.get(
-            authorized_resource=resource_reference
+            authorized_resource=resource_reference,
+            base_account__external_service=external_service,
         )
     except ConfiguredAddon.DoesNotExist:
         print("ConfiguredAddon not found")
