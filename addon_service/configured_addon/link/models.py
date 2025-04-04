@@ -18,7 +18,7 @@ def is_supported_resource_type(resource_type: int):
 class ConfiguredLinkAddon(ConfiguredAddon):
 
     target_id = models.CharField()
-    int_resource_type = models.IntegerField(validators=[is_supported_resource_type])
+    int_resource_type = models.BigIntegerField(validators=[is_supported_resource_type])
 
     @property
     def resource_type(self) -> str:

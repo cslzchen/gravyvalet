@@ -165,6 +165,7 @@ class TestResourceReferenceViewSet(TestCase):
                     "configured_storage_addons",
                     "configured_citation_addons",
                     "configured_computing_addons",
+                    "configured_link_addons",
                 },
             )
 
