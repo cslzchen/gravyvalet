@@ -1,7 +1,9 @@
 import logging
+from urllib.parse import quote_plus
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
+from django.core.exceptions import ValidationError
 from django.core.management import BaseCommand
 from django.db import transaction
 from django.db.models import Count
@@ -187,6 +189,15 @@ def get_user_reference(user_guid):
     return UserReference.objects.get_or_create(user_uri=f"{OSF_BASE}/{user_guid}")[0]
 
 
+def get_api_base_url(self, external_service, external_account):
+    if external_service.wb_key == "owncloud":
+        return f"{external_account.profile_url.removesuffix('/')}/remote.php/dav/files/{quote_plus(external_account.display_name)}/"
+    elif external_service.wb_key == "gitlab":
+        return f"{external_account.oauth_secret.removesuffix('/')}"
+    elif external_service.wb_key == "dataverse":
+        return f"https://{external_account.oauth_key}"
+
+
 def get_or_create_authorized_account(external_account, provider, user_guid):
     if provider in storage_provider:
         AuthorizedAccount = AuthorizedStorageAccount
@@ -213,6 +224,13 @@ def get_or_create_authorized_account(external_account, provider, user_guid):
             credentials=credentials,
             external_account_id=external_account.provider_id,
         )
+        if api_base_url := get_api_base_url(external_service, external_account):
+            try:
+                authorized_account.api_base_url = api_base_url
+            except ValidationError:
+                print(
+                    f"ValidationError when creating AuthroizedAccount with base url {api_base_url}"
+                )
         authorized_account.save()
         print(f"\t\t\t\t Created AuthorizedAccount on {provider} for user {user_guid}")
     else:
