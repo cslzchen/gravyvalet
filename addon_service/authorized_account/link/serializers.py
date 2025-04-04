@@ -6,6 +6,7 @@ from rest_framework_json_api.relations import (
 from rest_framework_json_api.utils import get_resource_type_from_model
 
 from addon_service.addon_operation.models import AddonOperationModel
+from addon_service.authorized_account.link.models import AuthorizedLinkAccount
 from addon_service.authorized_account.serializers import AuthorizedAccountSerializer
 from addon_service.common import view_names
 from addon_service.common.serializer_fields import (
@@ -13,7 +14,6 @@ from addon_service.common.serializer_fields import (
     ReadOnlyResourceRelatedField,
 )
 from addon_service.models import (
-    AuthorizedStorageAccount,
     ConfiguredLinkAddon,
     ExternalLinkService,
     UserReference,
@@ -53,7 +53,7 @@ class AuthorizedLinkAccountSerializer(AuthorizedAccountSerializer):
     included_serializers = {
         "account_owner": "addon_service.serializers.UserReferenceSerializer",
         "external_link_service": "addon_service.serializers.ExternalLinkServiceSerializer",
-        "configured_link_addons": "addon_service.serializers.ConfiguredLinkSerializer",
+        "configured_link_addons": "addon_service.serializers.ConfiguredLinkAddonSerializer",
         "authorized_operations": "addon_service.serializers.AddonOperationSerializer",
     }
 
@@ -65,7 +65,7 @@ class AuthorizedLinkAccountSerializer(AuthorizedAccountSerializer):
         )
 
     class Meta:
-        model = AuthorizedStorageAccount
+        model = AuthorizedLinkAccount
         fields = [
             "id",
             "url",
@@ -78,7 +78,6 @@ class AuthorizedLinkAccountSerializer(AuthorizedAccountSerializer):
             "authorized_operation_names",
             "configured_link_addons",
             "credentials",
-            "default_root_folder",
             "external_link_service",
             "initiate_oauth",
             "credentials_available",

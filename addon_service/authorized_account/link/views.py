@@ -4,6 +4,6 @@ from .models import AuthorizedLinkAccount
 from .serializers import AuthorizedLinkAccountSerializer
 
 
-class AuthorizedStorageAccountViewSet(AuthorizedAccountViewSet):
+class AuthorizedLinkAccountViewSet(AuthorizedAccountViewSet):
     queryset = AuthorizedLinkAccount.objects.all()
     serializer_class = AuthorizedLinkAccountSerializer

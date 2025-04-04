@@ -10,6 +10,7 @@ from addon_imps.citations import (
     zotero_org,
 )
 from addon_imps.computing import boa
+from addon_imps.link import dataverse as link_dataverse
 from addon_imps.storage import (
     bitbucket,
     box_dot_com,
@@ -25,6 +26,10 @@ from addon_imps.storage import (
 )
 from addon_service.common.enum_decorators import enum_names_same_as
 from addon_toolkit import AddonImp
+from addon_toolkit.interfaces.citation import CitationAddonImp
+from addon_toolkit.interfaces.computing import ComputingAddonImp
+from addon_toolkit.interfaces.link import LinkAddonImp
+from addon_toolkit.interfaces.storage import StorageAddonImp
 
 
 if __debug__:
@@ -79,7 +84,7 @@ class KnownAddonImps(enum.Enum):
     BITBUCKET = bitbucket.BitbucketStorageImp
     DATAVERSE = dataverse.DataverseStorageImp
     OWNCLOUD = owncloud.OwnCloudStorageImp
-
+    LINK_DATAVERSE = link_dataverse.DataverseLinkImp
     GITHUB = github.GitHubStorageImp
     GITLAB = gitlab.GitlabStorageImp
     DROPBOX = dropbox.DropboxStorageImp
@@ -108,6 +113,7 @@ class AddonImpNumbers(enum.Enum):
     GITLAB = 1011
     BITBUCKET = 1012
 
+    LINK_DATAVERSE = 1030
     GITHUB = 1013
 
     BOA = 1020
@@ -116,20 +122,17 @@ class AddonImpNumbers(enum.Enum):
         BLARG = -7
 
 
-StorageAddonImpNumbers = frozenset(
-    {
-        AddonImpNumbers.BOX,
-        AddonImpNumbers.S3,
-        AddonImpNumbers.GOOGLEDRIVE,
-        AddonImpNumbers.DROPBOX,
-        AddonImpNumbers.FIGSHARE,
-        AddonImpNumbers.ONEDRIVE,
-        AddonImpNumbers.OWNCLOUD,
-        AddonImpNumbers.DATAVERSE,
-        AddonImpNumbers.GITLAB,
-        AddonImpNumbers.BITBUCKET,
-        AddonImpNumbers.GITHUB,
-    }
-)
-CitationAddonImpNumbers = frozenset({AddonImpNumbers.ZOTERO, AddonImpNumbers.MENDELEY})
-ComputingAddonImpNumbers = frozenset({AddonImpNumbers.BOA})
+def filter_addons_by_type(addon_type):
+    return frozenset(
+        {
+            AddonImpNumbers[item.name]
+            for item in KnownAddonImps
+            if issubclass(item.value, addon_type)
+        }
+    )
+
+
+StorageAddonImpNumbers = filter_addons_by_type(StorageAddonImp)
+CitationAddonImpNumbers = filter_addons_by_type(CitationAddonImp)
+ComputingAddonImpNumbers = filter_addons_by_type(ComputingAddonImp)
+LinkAddonImpNumbers = filter_addons_by_type(LinkAddonImp)

@@ -61,7 +61,7 @@ class ExternalLinkServiceAdmin(GravyvaletModelAdmin):
     )
     raw_id_fields = ("oauth2_client_config", "oauth1_client_config")
     enum_choice_fields = {
-        "int_addon_imp": known_imps.AddonImpNumbers,
+        "int_addon_imp": known_imps.LinkAddonImpNumbers,
         "int_credentials_format": CredentialsFormats,
         "int_service_type": ServiceTypes,
     }
@@ -80,7 +80,7 @@ class ExternalComputingServiceAdmin(GravyvaletModelAdmin):
     )
     raw_id_fields = ("oauth2_client_config",)
     enum_choice_fields = {
-        "int_addon_imp": known_imps.AddonImpNumbers,
+        "int_addon_imp": known_imps.ComputingAddonImpNumbers,
         "int_credentials_format": CredentialsFormats,
         "int_service_type": ServiceTypes,
     }

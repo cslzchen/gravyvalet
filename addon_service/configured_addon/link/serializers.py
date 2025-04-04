@@ -24,7 +24,7 @@ RESOURCE_TYPE = get_resource_type_from_model(ConfiguredLinkAddon)
 class ConfiguredLinkAddonSerializer(ConfiguredAddonSerializer):
     """api serializer for the `ConfiguredLinkAddon` model"""
 
-    target_uri = URLField()
+    target_url = URLField(read_only=True)
     target_id = CharField()
     resource_type = EnumNameChoiceField(enum_cls=SupportedResourceTypes)
 
@@ -64,9 +64,8 @@ class ConfiguredLinkAddonSerializer(ConfiguredAddonSerializer):
         read_only_fields = ["external_link_service"]
         fields = [
             "id",
-            "url",
             "display_name",
-            "root_folder",
+            "target_url",
             "base_account",
             "authorized_resource",
             "authorized_resource_uri",
@@ -77,6 +76,5 @@ class ConfiguredLinkAddonSerializer(ConfiguredAddonSerializer):
             "current_user_is_owner",
             "external_service_name",
             "resource_type",
-            "target_uri",
             "target_id",
         ]

@@ -17,6 +17,11 @@ from addon_toolkit.interfaces.computing import (
     ComputingAddonImp,
     ComputingConfig,
 )
+from addon_toolkit.interfaces.link import (
+    LinkAddonClientRequestorImp,
+    LinkAddonHttpRequestorImp,
+    LinkAddonImp,
+)
 from addon_toolkit.interfaces.storage import (
     StorageAddonClientRequestorImp,
     StorageAddonHttpRequestorImp,
@@ -26,6 +31,7 @@ from addon_toolkit.interfaces.storage import (
 
 
 if TYPE_CHECKING:
+    from addon_service.authorized_account.link.models import AuthorizedLinkAccount
     from addon_service.authorized_account.models import AuthorizedAccount
     from addon_service.models import (
         AuthorizedCitationAccount,
@@ -45,6 +51,8 @@ async def get_addon_instance(
         return await get_citation_addon_instance(imp_cls, account, config)
     elif issubclass(imp_cls, ComputingAddonImp):
         return await get_computing_addon_instance(imp_cls, account, config)
+    elif issubclass(imp_cls, LinkAddonImp):
+        return await get_link_addon_instance(imp_cls, account)
     raise ValueError(f"unknown addon type {imp_cls}")
 
 
@@ -134,3 +142,28 @@ async def get_computing_addon_instance(
 
 
 get_computing_addon_instance__blocking = async_to_sync(get_computing_addon_instance)
+
+
+async def get_link_addon_instance(
+    imp_cls: type[LinkAddonImp],
+    account: AuthorizedLinkAccount,
+) -> LinkAddonImp:
+    """create an instance of a `linkAddonImp`"""
+
+    assert issubclass(imp_cls, AddonImp)
+    assert imp_cls is not LinkAddonImp, "Addons shouldn't directly extend LinkAddonImp"
+    if issubclass(imp_cls, LinkAddonHttpRequestorImp):
+        imp = imp_cls(
+            network=GravyvaletHttpRequestor(
+                client_session=await get_singleton_client_session(),
+                prefix_url=account.external_service.api_base_url,
+                account=account,
+            ),
+        )
+    if issubclass(imp_cls, LinkAddonClientRequestorImp):
+        imp = imp_cls(credentials=await account.get_credentials__async())
+
+    return imp
+
+
+get_link_addon_instance__blocking = async_to_sync(get_link_addon_instance)

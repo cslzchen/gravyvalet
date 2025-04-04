@@ -25,7 +25,7 @@ __all__ = (
 
 
 class ItemType(enum.StrEnum):
-    FILE = enum.auto()
+    RESOURCE = enum.auto()
     FOLDER = enum.auto()
 
 
@@ -69,7 +69,7 @@ class ItemResult:
     item_id: str
     item_name: str
     item_type: ItemType
-    resource_type: SupportedResourceTypes
+    resource_type: SupportedResourceTypes | None = None
     item_link: str | None = None
 
 
@@ -100,6 +100,8 @@ class ItemSampleResult:
 
 class LinkAddonInterface(BaseAddonInterface, typing.Protocol):
 
+    async def build_url_for_id(self, item_id: str) -> str: ...
+
     @immediate_operation(capability=AddonCapabilities.ACCESS)
     async def get_item_info(self, item_id: str) -> ItemResult: ...
 
@@ -121,12 +123,9 @@ class LinkAddonImp(AddonImp):
 
     ADDON_INTERFACE = LinkAddonInterface
 
-    async def build_wb_config(self) -> dict:
-        return {}
-
 
 @dataclasses.dataclass
-class LinkAddonHttpRequestorImp(LinkAddonImp):
+class LinkAddonHttpRequestorImp(LinkAddonImp, LinkAddonInterface):
     """base class for link addon implementations using GV network"""
 
     network: HttpRequestor

@@ -3,6 +3,7 @@ from django.utils import timezone
 
 from addon_service.authorized_account.citation.models import AuthorizedCitationAccount
 from addon_service.authorized_account.computing.models import AuthorizedComputingAccount
+from addon_service.authorized_account.link.models import AuthorizedLinkAccount
 from addon_service.authorized_account.storage.models import AuthorizedStorageAccount
 from addon_service.common.base_model import AddonsServiceBaseModel
 from addon_service.configured_addon.computing.models import ConfiguredComputingAddon
@@ -54,6 +55,12 @@ class UserReference(AddonsServiceBaseModel):
         return AuthorizedComputingAccount.objects.filter(
             account_owner=self
         ).select_related("external_service")
+
+    @property
+    def authorized_link_accounts(self):
+        return AuthorizedLinkAccount.objects.filter(account_owner=self).select_related(
+            "external_service"
+        )
 
     class Meta:
         verbose_name = "User Reference"

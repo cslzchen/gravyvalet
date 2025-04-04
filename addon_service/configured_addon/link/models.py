@@ -1,3 +1,4 @@
+from asgiref.sync import async_to_sync
 from django.core.exceptions import ValidationError
 from django.db import models
 
@@ -16,13 +17,25 @@ def is_supported_resource_type(resource_type: int):
 
 class ConfiguredLinkAddon(ConfiguredAddon):
 
-    target_uri = models.URLField()
     target_id = models.CharField()
     int_resource_type = models.IntegerField(validators=[is_supported_resource_type])
 
     @property
     def resource_type(self) -> str:
         return SupportedResourceTypes(self.int_resource_type).name
+
+    @resource_type.setter
+    def resource_type(self, value) -> None:
+        self.int_resource_type = value.value
+
+    def target_url(self):
+        if self.target_id:
+            from addon_service.addon_imp.instantiation import (
+                get_link_addon_instance__blocking,
+            )
+
+            addon = get_link_addon_instance__blocking(self.imp_cls, self.base_account)
+            return async_to_sync(addon.build_url_for_id)(self.target_id)
 
     class Meta:
         verbose_name = "Configured Link Addon"

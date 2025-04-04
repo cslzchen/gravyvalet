@@ -14,21 +14,21 @@ def validate_supported_features(value):
 
 
 class ExternalLinkService(ExternalService):
-    int_supported_resource_types = models.IntegerField(
+    int_supported_resource_types = models.BigIntegerField(
         validators=[validate_supported_features], null=True
     )
 
     @property
     def supported_resource_types(self) -> list[SupportedResourceTypes]:
         """get the enum representation of int_supported_features"""
-        return SupportedResourceTypes(self.int_supported_features)
+        return SupportedResourceTypes(self.int_supported_resource_types)
 
     @supported_resource_types.setter
     def supported_resource_types(
         self, new_supported_resource_types: SupportedResourceTypes
     ):
         """set int_authorized_capabilities without caring its int"""
-        self.int_supported_features = new_supported_resource_types.value
+        self.int_supported_resource_types = new_supported_resource_types.value
 
     def clean(self):
         super().clean()

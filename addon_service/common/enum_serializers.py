@@ -41,6 +41,8 @@ class EnumNameChoiceField(_BaseEnumNameChoiceField):
         return self.enum_cls[_name]
 
     def to_representation(self, value: enum.Enum):
+        if isinstance(value, str):
+            value = self.enum_cls[value]
         return super().to_representation(value).name
 
 
