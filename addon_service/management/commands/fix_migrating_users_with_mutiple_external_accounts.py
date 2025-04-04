@@ -182,7 +182,7 @@ def get_external_service(provider):
 
 
 def get_user_reference(user_guid):
-    return UserReference.objects.get_or_create(user_uri=f"{OSF_BASE}/{user_guid}")
+    return UserReference.objects.get_or_create(user_uri=f"{OSF_BASE}/{user_guid}")[0]
 
 
 def get_or_create_authorized_account(external_account, provider, user_guid):
