@@ -14,7 +14,7 @@ def migrate_credential_format(*args, **kwargs):
     for service in ExternalService.objects.all():
         ExternalCredentials.objects.filter(
             authorized_account__external_service=service
-        ).update(int_credentials_format=service.credentials_format)
+        ).update(int_credentials_format=service.credentials_format.value)
 
 
 class Migration(migrations.Migration):
