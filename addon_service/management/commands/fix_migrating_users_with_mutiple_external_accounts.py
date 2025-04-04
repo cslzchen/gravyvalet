@@ -251,6 +251,11 @@ def fix_migration_for_user_and_provider(user, provider):
     for node_settings in ns:
         external_account = node_settings.external_account
         node_guid = get_node_guid(node_settings.owner_id)
+        if not external_account:
+            print(
+                f"\t\t Skipping node setting for node {node_guid} because no ExternalAccount is found"
+            )
+            continue
         print(f"\t\t Checking node setting for node {node_guid}")
         # check to see if the migrated configured_addon instance have the authorized account with the same external_account_id
         if not configured_addon_has_correct_base_account(
