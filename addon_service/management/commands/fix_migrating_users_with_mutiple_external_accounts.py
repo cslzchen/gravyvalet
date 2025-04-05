@@ -189,7 +189,7 @@ def get_user_reference(user_guid):
     return UserReference.objects.get_or_create(user_uri=f"{OSF_BASE}/{user_guid}")[0]
 
 
-def get_api_base_url(self, external_service, external_account):
+def get_api_base_url(external_service, external_account):
     if external_service.wb_key == "owncloud":
         return f"{external_account.profile_url.removesuffix('/')}/remote.php/dav/files/{quote_plus(external_account.display_name)}/"
     elif external_service.wb_key == "gitlab":
