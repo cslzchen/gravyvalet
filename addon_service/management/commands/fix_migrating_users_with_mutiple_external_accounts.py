@@ -209,7 +209,7 @@ def get_or_create_authorized_account(external_account, provider, user_guid):
 
     authorized_account = None
     if not AuthorizedAccount.objects.filter(
-        external_account_id=external_account.id,
+        external_account_id=external_account.provider_id,
         external_service=external_service,
         account_owner=account_owner,
     ).exists():
@@ -232,14 +232,18 @@ def get_or_create_authorized_account(external_account, provider, user_guid):
                     f"ValidationError when creating AuthroizedAccount with base url {api_base_url}"
                 )
         authorized_account.save()
-        print(f"\t\t\t\t Created AuthorizedAccount on {provider} for user {user_guid}")
+        print(
+            f"\t\t\t\t Created AuthorizedAccount on {provider} for user {user_guid} with external_account_id={authorized_account.external_account_id}"
+        )
     else:
         authorized_account = AuthorizedAccount.objects.get(
             external_account_id=external_account.id,
             external_service=external_service,
             account_owner=account_owner,
         )
-        print(f"\t\t\t\t Found AuthorizedAccount on {provider} for user {user_guid}")
+        print(
+            f"\t\t\t\t Found AuthorizedAccount on {provider} for user {user_guid} with external_account_id={authorized_account.external_account_id}"
+        )
 
     return authorized_account
 
