@@ -237,7 +237,7 @@ def get_or_create_authorized_account(external_account, provider, user_guid):
         )
     else:
         authorized_account = AuthorizedAccount.objects.get(
-            external_account_id=external_account.id,
+            external_account_id=external_account.provider_id,
             external_service=external_service,
             account_owner=account_owner,
         )
