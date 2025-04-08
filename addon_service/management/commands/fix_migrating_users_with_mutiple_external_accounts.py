@@ -1,3 +1,4 @@
+import datetime
 import logging
 from urllib.parse import quote_plus
 
@@ -81,6 +82,11 @@ OSF_BASE = settings.OSF_BASE_URL.replace("192.168.168.167", "localhost").replace
     "8000", "5000"
 )
 
+CUTOFF_TIMESTAMP = datetime.datetime(
+    2025, 2, 25, 0, 37, 18, 0, tzinfo=datetime.timezone.utc
+)
+IGNORE_CUTOFF = False
+
 
 class CredentialException(Exception):
     pass
@@ -150,6 +156,17 @@ def get_target_user_pks_and_provider():
         UserToExternalAccount.objects.values("osfuser_id", "externalaccount__provider")
         .annotate(account_per_provider=Count("id"))
         .filter(account_per_provider__gt=1)
+        .values_list("osfuser_id", "externalaccount__provider")
+    )
+
+
+def get_target_user_pk_and_provider_by_user_guid(user_guid):
+    guid = Guid.objects.get(_id=user_guid)
+    user_pk = guid.object_id
+    return (
+        UserToExternalAccount.objects.values("osfuser_id", "externalaccount__provider")
+        .annotate(account_per_provider=Count("id"))
+        .filter(account_per_provider__gt=1, osfuser_id=user_pk)
         .values_list("osfuser_id", "externalaccount__provider")
     )
 
@@ -285,6 +302,11 @@ def fix_migration_for_user_and_provider(user, provider):
         ):
             # if not, then we fix it
             configured_addon = get_configured_addon(node_guid, provider)
+            if not IGNORE_CUTOFF and configured_addon.modified > CUTOFF_TIMESTAMP:
+                print(
+                    f"\t\t\t Won fix mismatch for {provider} on {node_guid} because it is modified after cutoff={CUTOFF_TIMESTAMP} at {configured_addon.modified}"
+                )
+                continue
             authorized_account = get_or_create_authorized_account(
                 external_account, provider, user.guid
             )
@@ -297,17 +319,34 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--fake", action="store_true")
+        parser.add_argument("--ignore-cutoff", action="store_true")
+        parser.add_argument("--user", type=str)
 
     @transaction.atomic
     def handle(self, *args, **options):
         fake = options["fake"]
+        ignore_cutoff = options["ignore_cutoff"]
+        user_guid = options["user"]
 
-        for user_pk, provider in get_target_user_pks_and_provider():
+        if ignore_cutoff:
+            global IGNORE_CUTOFF
+            IGNORE_CUTOFF = True
+
+        user_pk_and_provider_tuples = None
+        if user_guid:
+            user_pk_and_provider_tuples = get_target_user_pk_and_provider_by_user_guid(
+                user_guid
+            )
+        else:
+            user_pk_and_provider_tuples = get_target_user_pks_and_provider()
+
+        for user_pk, provider in user_pk_and_provider_tuples:
             user = OsfUser.objects.get(pk=user_pk)
             print(f"Found multiple ExternalAccount on {provider} for user {user.guid}")
             if provider != "boa":
                 # We don't need to fix boa
                 fix_migration_for_user_and_provider(user, provider)
+
         if fake:
             print("Rolling back the transactions because this is a fake run")
             transaction.set_rollback(True)
