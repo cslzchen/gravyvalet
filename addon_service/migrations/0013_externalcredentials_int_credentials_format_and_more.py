@@ -7,19 +7,14 @@ from django.db import (
 
 import addon_service.common.validators
 from addon_service.credentials.models import ExternalCredentials
+from addon_service.external_service.models import ExternalService
 
 
 def migrate_credential_format(*args, **kwargs):
-    skipped = 0
-    processed = 0
-    for credential in ExternalCredentials.objects.iterator():
-        if creds_format := credential.format:
-            credential.int_credentials_format = creds_format.value
-            credential.save()
-            processed += 1
-        else:
-            skipped += 1
-    print(f"\nMigrating credential format: {skipped=}, {processed=}")
+    for service in ExternalService.objects.all():
+        ExternalCredentials.objects.filter(
+            authorized_account__external_service=service
+        ).update(int_credentials_format=service.credentials_format.value)
 
 
 class Migration(migrations.Migration):
