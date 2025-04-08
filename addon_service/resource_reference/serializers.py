@@ -30,6 +30,11 @@ class ResourceReferenceSerializer(serializers.HyperlinkedModelSerializer):
         queryset=ConfiguredCitationAddon.objects.active(),
         related_link_view_name=view_names.related_view(RESOURCE_TYPE),
     )
+    configured_link_addons = HyperlinkedRelatedField(
+        many=True,
+        queryset=ConfiguredCitationAddon.objects.active(),
+        related_link_view_name=view_names.related_view(RESOURCE_TYPE),
+    )
     configured_computing_addons = HyperlinkedRelatedField(
         many=True,
         queryset=ConfiguredComputingAddon.objects.active(),
@@ -43,6 +48,9 @@ class ResourceReferenceSerializer(serializers.HyperlinkedModelSerializer):
         "configured_citation_addons": (
             "addon_service.serializers.ConfiguredCitationAddonSerializer"
         ),
+        "configured_link_addons": (
+            "addon_service.serializers.ConfiguredComputingAddonSerializer"
+        ),
         "configured_computing_addons": (
             "addon_service.serializers.ConfiguredComputingAddonSerializer"
         ),
@@ -55,6 +63,7 @@ class ResourceReferenceSerializer(serializers.HyperlinkedModelSerializer):
             "url",
             "resource_uri",
             "configured_storage_addons",
+            "configured_link_addons",
             "configured_citation_addons",
             "configured_computing_addons",
         ]

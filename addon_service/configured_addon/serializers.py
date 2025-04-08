@@ -6,7 +6,7 @@ from addon_service.configured_addon.models import ConfiguredAddon
 from addon_toolkit import AddonCapabilities
 
 
-REQUIRED_FIELDS = frozenset(["url", "connected_operations", "authorized_resource"])
+REQUIRED_FIELDS = frozenset(["connected_operations", "authorized_resource"])
 
 
 class ConfiguredAddonSerializer(serializers.HyperlinkedModelSerializer):
@@ -14,7 +14,7 @@ class ConfiguredAddonSerializer(serializers.HyperlinkedModelSerializer):
         super().__init__(*args, **kwargs)
         if not REQUIRED_FIELDS.issubset(set(self.fields.keys())):
             raise Exception(
-                f"{self.__class__.__name__} requires {self.REQUIRED_FIELDS} to be instantiated"
+                f"{self.__class__.__name__} requires {REQUIRED_FIELDS} to be instantiated"
             )
 
     connected_capabilities = EnumNameMultipleChoiceField(enum_cls=AddonCapabilities)

@@ -67,6 +67,7 @@ class TestUserReferenceAPI(APITestCase):
                     "authorized_storage_accounts",
                     "authorized_citation_accounts",
                     "authorized_computing_accounts",
+                    "authorized_link_accounts",
                     "configured_resources",
                 },
             )
@@ -202,6 +203,7 @@ class TestUserReferenceViewSet(TestCase):
                 "authorized_storage_accounts",
                 "authorized_citation_accounts",
                 "authorized_computing_accounts",
+                "authorized_link_accounts",
                 "configured_resources",
             },
         )
