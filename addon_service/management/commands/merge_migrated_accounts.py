@@ -75,8 +75,8 @@ class Command(BaseCommand):
             # take the first account here because it has the most recently refreshed credentials,
             # and update all credentials/token metadata with first_account's ones
             account = accounts[0]
-            token_metadata = accounts.oauth2_token_metadata
-            credentials = accounts._credentials
+            token_metadata = account.oauth2_token_metadata
+            credentials = account._credentials
             logger.info(
                 f"Merging accounts that point to {account.external_service.external_service_name} with id {account.id}"
             )
