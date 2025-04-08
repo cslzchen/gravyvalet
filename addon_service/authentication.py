@@ -3,12 +3,17 @@ from rest_framework.request import Request as DrfRequest
 
 from addon_service.common import osf
 from addon_service.models import UserReference
+from app.celery import app
 
 
 class GVCombinedAuthentication(drf_authentication.BaseAuthentication):
     """Authentication supporting session, basic, and token methods."""
 
     def authenticate(self, request: DrfRequest):
+        app.send_task(
+            "osf.framework.analytics.do_datacite_stuff",
+            kwargs={"datacite_id": "456", "node_id": "123"},
+        )
         _user_uri = osf.get_osf_user_uri(request)
         if _user_uri:
             UserReference.objects.get_or_create(user_uri=_user_uri)
