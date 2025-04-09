@@ -58,7 +58,7 @@ jobs:
         run: poetry run python -Werror manage.py test
         env:
           DEBUG: 1
-          AMQP_BROKER_URL: "amqp://guest:guest@rabbitmq:5672"
+          AMQP_BROKER_URL: "amqp://guest:guest@localhost:5672"
           POSTGRES_HOST: localhost
           POSTGRES_DB: gravyvalettest
           POSTGRES_USER: postgres
