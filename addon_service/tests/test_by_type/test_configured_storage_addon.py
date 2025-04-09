@@ -38,8 +38,8 @@ class BaseAPITest(APITestCase):
 
     def setUp(self):
         super().setUp()
-        self.client.cookies[settings.USER_REFERENCE_COOKIE] = self._user.user_uri
         self._mock_osf = MockOSF()
+        self._mock_osf.configure_assumed_caller(self._user.user_uri)
         self._mock_osf.configure_user_role(
             self._user.user_uri, self._configured_storage_addon.resource_uri, "admin"
         )
@@ -127,6 +127,8 @@ class ConfiguredStorageAddonViewSetTests(BaseAPITest):
 
     def test_unauthorized_user(self):
         self.set_auth_header("session")
+        unauthorized_user = test_factories.UserReferenceFactory()
+        self._mock_osf.configure_assumed_caller(unauthorized_user.user_uri)
         response = self.client.get(self.related_url("base_account"))
         self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
 

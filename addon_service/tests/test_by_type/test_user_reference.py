@@ -1,7 +1,6 @@
 import json
 from http import HTTPStatus
 
-from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db.models.query import QuerySet
 from django.test import TestCase
@@ -24,8 +23,8 @@ class TestUserReferenceAPI(APITestCase):
 
     def setUp(self):
         super().setUp()
-        self.client.cookies[settings.USER_REFERENCE_COOKIE] = self._user.user_uri
         self._mock_osf = MockOSF()
+        self._mock_osf.configure_assumed_caller(self._user.user_uri)
         self.enterContext(self._mock_osf.mocking())
 
     @property
@@ -180,13 +179,12 @@ class TestUserReferenceViewSet(TestCase):
     def setUp(self):
         super().setUp()
         self._mock_osf = MockOSF()
+        self._mock_osf.configure_assumed_caller(self._user.user_uri)
         self.enterContext(self._mock_osf.mocking())
 
     def test_get(self):
         _resp = self._view(
-            get_test_request(
-                cookies={settings.USER_REFERENCE_COOKIE: self._user.user_uri},
-            ),
+            get_test_request(),
             pk=self._user.pk,
         )
         self.assertEqual(_resp.status_code, HTTPStatus.OK)
@@ -209,15 +207,16 @@ class TestUserReferenceViewSet(TestCase):
         )
 
     def test_wrong_user(self):
+        wrong_user = _factories.UserReferenceFactory()
+        self._mock_osf.configure_assumed_caller(wrong_user.user_uri)
         _resp = self._view(
-            get_test_request(
-                cookies={settings.USER_REFERENCE_COOKIE: "this is the wrong cookie"}
-            ),
+            get_test_request(),
             pk=self._user.pk,
         )
         self.assertEqual(_resp.status_code, HTTPStatus.FORBIDDEN)
 
     def test_unauthorized(self):
+        self._mock_osf.configure_assumed_caller(None)
         _anon_resp = self._view(get_test_request(), pk=self._user.pk)
         self.assertEqual(_anon_resp.status_code, HTTPStatus.UNAUTHORIZED)
 
@@ -231,11 +230,9 @@ class TestUserReferenceRelatedView(APITestCase):
     def setUp(self):
         super().setUp()
         self._mock_osf = MockOSF()
+        self._mock_osf.configure_assumed_caller(self._user.user_uri)
         self.enterContext(self._mock_osf.mocking())
-        self.request = get_test_request(
-            user=self._user,
-            cookies={settings.USER_REFERENCE_COOKIE: self._user.user_uri},
-        )
+        self.request = get_test_request()
 
     def test_get_related__empty(self):
         _resp = self._related_view(
