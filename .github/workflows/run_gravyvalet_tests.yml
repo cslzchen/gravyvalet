@@ -68,3 +68,4 @@ jobs:
           POSTGRES_DB: gravyvalettest
           POSTGRES_USER: postgres
           SECRET_KEY: oh-so-secret
+          REDIS_HOST: localhost:6379
