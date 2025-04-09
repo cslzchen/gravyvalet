@@ -3,7 +3,10 @@ from django.core.exceptions import ValidationError
 from django.db import models
 
 from addon_service.configured_addon.models import ConfiguredAddon
-from addon_toolkit.interfaces.link import SupportedResourceTypes
+from addon_toolkit.interfaces.link import (
+    LinkConfig,
+    SupportedResourceTypes,
+)
 
 
 def is_supported_resource_type(resource_type: int):
@@ -34,8 +37,14 @@ class ConfiguredLinkAddon(ConfiguredAddon):
                 get_link_addon_instance__blocking,
             )
 
-            addon = get_link_addon_instance__blocking(self.imp_cls, self.base_account)
+            addon = get_link_addon_instance__blocking(
+                self.imp_cls, self.base_account, self.config
+            )
             return async_to_sync(addon.build_url_for_id)(self.target_id)
+
+    @property
+    def config(self) -> LinkConfig:
+        return self.base_account.authorizedlinkaccount.config
 
     class Meta:
         verbose_name = "Configured Link Addon"

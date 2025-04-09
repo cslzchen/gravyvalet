@@ -15,7 +15,8 @@ from addon_toolkit.interfaces.link import (
 
 
 DATAVERSE_REGEX = re.compile(r"^dataverse/(?P<id>\d*)$")
-DATASET_REGEX = re.compile(r"^dataset/(?P<id>.*)$")
+DATASET_REGEX = re.compile(r"^dataset/(?P<id>\d*)(?P<persistent_id>.*)$")
+FILE_REGEX = re.compile(r"^file/(?P<persistent_id>.*)$")
 
 
 @dataclass
@@ -26,9 +27,13 @@ class DataverseLinkImp(LinkAddonHttpRequestorImp):
     """
 
     async def build_url_for_id(self, item_id: str) -> str:
-        dataset_id = DATASET_REGEX.match(item_id)["id"]
-        dataset = await self._fetch_dataset(dataset_id)
-        return dataset.item_id
+        match = DATASET_REGEX.match(item_id)
+        if not (persistent_id := match["persistent_id"]):
+            dataset = await self._fetch_dataset(match["id"])
+            return dataset.item_link
+        return (
+            f"{self.config.external_api_url}/dataset.xhtml?persistentId={persistent_id}"
+        )
 
     async def get_external_account_id(self, _: dict[str, str]) -> str:
         try:
@@ -53,16 +58,7 @@ class DataverseLinkImp(LinkAddonHttpRequestorImp):
                 ["selected_page", page_cursor],
                 *[("role_ids", role) for role in range(1, 9)],
                 ("dvobject_types", "Dataverse"),
-                *[
-                    ("published_states", state)
-                    for state in [
-                        "Unpublished",
-                        "Published",
-                        "Draft",
-                        "Deaccessioned",
-                        "In+Review",
-                    ]
-                ],
+                ("published_states", "Published"),
             ],
         ) as response:
             content = await response.json_content()
@@ -76,7 +72,11 @@ class DataverseLinkImp(LinkAddonHttpRequestorImp):
         elif match := DATAVERSE_REGEX.match(item_id):
             entity = await self._fetch_dataverse(match["id"])
         elif match := DATASET_REGEX.match(item_id):
-            entity = await self._fetch_dataset(persistent_id=match["id"])
+            entity = await self._fetch_dataset(
+                dataset_id=match["id"], persistent_id=match["persistent_id"]
+            )
+        elif match := FILE_REGEX.match(item_id):
+            entity = await self._fetch_file(match["persistent_id"])
         else:
             raise ValueError(f"Invalid item id: {item_id}")
 
@@ -92,6 +92,14 @@ class DataverseLinkImp(LinkAddonHttpRequestorImp):
             return await self.list_root_items(page_cursor)
         elif match := DATAVERSE_REGEX.match(item_id):
             items = await self._fetch_dataverse_items(match["id"])
+            return ItemSampleResult(
+                items=items,
+                total_count=len(items),
+            )
+        elif match := DATASET_REGEX.match(item_id):
+            items = await self._fetch_dataset_files(
+                dataset_id=match["id"], persistent_id=match["persistent_id"]
+            )
             return ItemSampleResult(
                 items=items,
                 total_count=len(items),
@@ -119,6 +127,12 @@ class DataverseLinkImp(LinkAddonHttpRequestorImp):
                 return parse_dataverse_as_subitem(item)
         raise ValueError(f"Invalid item type: {item['type']}")
 
+    async def _fetch_file(self, dataverse_id) -> ItemResult:
+        async with self.network.GET(
+            "api/files/:persistentId", query={"persistentId": dataverse_id}
+        ) as response:
+            return self._parse_datafile(await response.json_content())
+
     async def _fetch_dataverse(self, dataverse_id) -> ItemResult:
         async with self.network.GET(f"api/dataverses/{dataverse_id}") as response:
             return parse_dataverse(await response.json_content())
@@ -126,11 +140,56 @@ class DataverseLinkImp(LinkAddonHttpRequestorImp):
     async def _fetch_dataset(
         self, dataset_id: str = None, persistent_id: str = None
     ) -> ItemResult:
-        url = f"api/datasets/{':persistentId' if persistent_id else dataset_id}"
+        url = f"api/datasets/{':persistentId' if persistent_id else dataset_id}/versions/:latest-published"
         query = {"persistentId": persistent_id} if persistent_id else {}
-        # async with self.network.GET("api/datasets/:persistentId/", query={'persistentId': dataset_id}) as response:
         async with self.network.GET(url, query=query) as response:
-            return parse_dataset(await response.json_content())
+            return self._parse_dataset(await response.json_content())
+
+    async def _fetch_dataset_files(
+        self, dataset_id: str = None, persistent_id: str = None
+    ) -> list[ItemResult]:
+        url = f"api/datasets/{':persistentId' if persistent_id else dataset_id}/versions/:latest-published"
+        query = {"persistentId": persistent_id} if persistent_id else {}
+        async with self.network.GET(url, query=query) as response:
+            return self._parse_dataset_files(await response.json_content())
+
+    def _parse_datafile(self, data: dict):
+        if data.get("data"):
+            data = data["data"]
+
+        return ItemResult(
+            item_id=f"file/{data['dataFile']['persistentId']}",
+            item_name=data["label"],
+            item_type=ItemType.RESOURCE,
+            item_link=f'{self.config.external_api_url}/file.xhtml?persistentId={data['dataFile']["persistentId"]}',
+            doi=data["dataFile"]["persistentId"],
+        )
+
+    def _parse_dataset(self, data: dict) -> ItemResult:
+        if data.get("data"):
+            data = data["data"]
+        try:
+            return ItemResult(
+                item_id=f'dataset/{data["datasetPersistentId"]}',
+                item_name=[
+                    item
+                    for item in data["metadataBlocks"]["citation"]["fields"]
+                    if item["typeName"] == "title"
+                ][0]["value"],
+                item_type=ItemType.FOLDER,
+                item_link=f'{self.config.external_api_url}/dataset.xhtml?persistentId={data["datasetPersistentId"]}',
+                doi=data["datasetPersistentId"],
+            )
+        except (KeyError, IndexError) as e:
+            raise ValueError(f"Invalid dataset response: {e=}")
+
+    def _parse_dataset_files(self, data: dict) -> list[ItemResult]:
+        if data.get("data"):
+            data = data["data"]
+        try:
+            return [self._parse_datafile(file) for file in data["files"]]
+        except (KeyError, IndexError) as e:
+            raise ValueError(f"Invalid dataset response:{e=}")
 
 
 ###
@@ -174,22 +233,3 @@ def parse_mydata(data: dict):
             else None
         ),
     )
-
-
-def parse_dataset(data: dict) -> ItemResult:
-    if data.get("data"):
-        data = data["data"]
-    try:
-        return ItemResult(
-            item_id=f'dataset/{data['latestVersion']["datasetPersistentId"]}',
-            item_name=[
-                item
-                for item in data["latestVersion"]["metadataBlocks"]["citation"][
-                    "fields"
-                ]
-                if item["typeName"] == "title"
-            ][0]["value"],
-            item_type=ItemType.FOLDER,
-        )
-    except (KeyError, IndexError) as e:
-        raise ValueError(f"Invalid dataset response: {e=}")

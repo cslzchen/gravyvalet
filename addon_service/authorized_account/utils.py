@@ -20,5 +20,5 @@ def get_config_for_account(account: AuthorizedAccount):
     elif issubclass(account.imp_cls, ComputingAddonImp):
         return account.authorizedcomputingaccount.config
     elif issubclass(account.imp_cls, LinkAddonImp):
-        return None
+        return account.authorizedlinkaccount.config
     raise ValueError(f"this function implementation does not support {account.imp_cls}")

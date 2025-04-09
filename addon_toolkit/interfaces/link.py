@@ -71,6 +71,12 @@ class ItemResult:
     item_type: ItemType
     resource_type: SupportedResourceTypes | None = None
     item_link: str | None = None
+    doi: str | None = None
+
+
+@dataclasses.dataclass(frozen=True)
+class LinkConfig:
+    external_api_url: str
 
 
 @dataclasses.dataclass
@@ -122,6 +128,7 @@ class LinkAddonImp(AddonImp):
     """base class for link addon implementations"""
 
     ADDON_INTERFACE = LinkAddonInterface
+    config: LinkConfig
 
 
 @dataclasses.dataclass
