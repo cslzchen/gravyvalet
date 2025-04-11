@@ -15,7 +15,7 @@ from addon_toolkit.interfaces.link import (
 
 
 DATAVERSE_REGEX = re.compile(r"^dataverse/(?P<id>\d*)$")
-DATASET_REGEX = re.compile(r"^dataset/(?P<id>\d*)(?P<persistent_id>.*)$")
+DATASET_REGEX = re.compile(r"^dataset/(?P<persistent_id>.*)$")
 FILE_REGEX = re.compile(r"^file/(?P<persistent_id>.*)$")
 
 
@@ -28,12 +28,12 @@ class DataverseLinkImp(LinkAddonHttpRequestorImp):
 
     async def build_url_for_id(self, item_id: str) -> str:
         match = DATASET_REGEX.match(item_id)
-        if not (persistent_id := match["persistent_id"]):
-            dataset = await self._fetch_dataset(match["id"])
-            return dataset.item_link
-        return (
-            f"{self.config.external_api_url}/dataset.xhtml?persistentId={persistent_id}"
-        )
+        if match:
+            persistent_id = match["persistent_id"]
+            return f"{self.config.external_api_url}/dataset.xhtml?persistentId={persistent_id}"
+        elif match := FILE_REGEX.match(item_id):
+            persistent_id = match["persistent_id"]
+            return f"{self.config.external_api_url}/file.xhtml?persistentId={persistent_id}"
 
     async def get_external_account_id(self, _: dict[str, str]) -> str:
         try:
@@ -57,7 +57,10 @@ class DataverseLinkImp(LinkAddonHttpRequestorImp):
             query=[
                 ["selected_page", page_cursor],
                 *[("role_ids", role) for role in range(1, 9)],
-                ("dvobject_types", "Dataverse"),
+                (
+                    "dvobject_types",
+                    "Dataverse",
+                ),  # only published dataverses may contain published datasets
                 ("published_states", "Published"),
             ],
         ) as response:
@@ -114,12 +117,12 @@ class DataverseLinkImp(LinkAddonHttpRequestorImp):
             response_content = await response.json_content()
             return await asyncio.gather(
                 *[
-                    self.get_dataverse_or_dataset_item(item)
+                    self._get_dataverse_or_dataset_item(item)
                     for item in response_content["data"]
                 ]
             )
 
-    async def get_dataverse_or_dataset_item(self, item: dict):
+    async def _get_dataverse_or_dataset_item(self, item: dict):
         match item["type"]:
             case "dataset":
                 return await self._fetch_dataset(dataset_id=item["id"])
@@ -137,21 +140,30 @@ class DataverseLinkImp(LinkAddonHttpRequestorImp):
         async with self.network.GET(f"api/dataverses/{dataverse_id}") as response:
             return parse_dataverse(await response.json_content())
 
-    async def _fetch_dataset(
-        self, dataset_id: str = None, persistent_id: str = None
-    ) -> ItemResult:
+    async def _fetch_dataset_with_parser(
+        self,
+        dataset_id: str = None,
+        persistent_id: str = None,
+        parser=None,
+    ) -> ItemResult | list[ItemResult]:
         url = f"api/datasets/{':persistentId' if persistent_id else dataset_id}/versions/:latest-published"
         query = {"persistentId": persistent_id} if persistent_id else {}
         async with self.network.GET(url, query=query) as response:
-            return self._parse_dataset(await response.json_content())
+            return parser(await response.json_content())
+
+    async def _fetch_dataset(
+        self, dataset_id: str = None, persistent_id: str = None
+    ) -> ItemResult:
+        return await self._fetch_dataset_with_parser(
+            dataset_id, persistent_id, parser=self._parse_dataset
+        )
 
     async def _fetch_dataset_files(
         self, dataset_id: str = None, persistent_id: str = None
     ) -> list[ItemResult]:
-        url = f"api/datasets/{':persistentId' if persistent_id else dataset_id}/versions/:latest-published"
-        query = {"persistentId": persistent_id} if persistent_id else {}
-        async with self.network.GET(url, query=query) as response:
-            return self._parse_dataset_files(await response.json_content())
+        return await self._fetch_dataset_with_parser(
+            dataset_id, persistent_id, parser=self._parse_dataset_files
+        )
 
     def _parse_datafile(self, data: dict):
         if data.get("data"):
@@ -164,6 +176,14 @@ class DataverseLinkImp(LinkAddonHttpRequestorImp):
             item_link=f'{self.config.external_api_url}/file.xhtml?persistentId={data['dataFile']["persistentId"]}',
             doi=data["dataFile"]["persistentId"],
         )
+
+    def _parse_dataset_files(self, data: dict) -> list[ItemResult]:
+        if data.get("data"):
+            data = data["data"]
+        try:
+            return [self._parse_datafile(file) for file in data["files"]]
+        except (KeyError, IndexError) as e:
+            raise ValueError(f"Invalid dataset response:{e=}")
 
     def _parse_dataset(self, data: dict) -> ItemResult:
         if data.get("data"):
@@ -182,14 +202,6 @@ class DataverseLinkImp(LinkAddonHttpRequestorImp):
             )
         except (KeyError, IndexError) as e:
             raise ValueError(f"Invalid dataset response: {e=}")
-
-    def _parse_dataset_files(self, data: dict) -> list[ItemResult]:
-        if data.get("data"):
-            data = data["data"]
-        try:
-            return [self._parse_datafile(file) for file in data["files"]]
-        except (KeyError, IndexError) as e:
-            raise ValueError(f"Invalid dataset response:{e=}")
 
 
 ###
