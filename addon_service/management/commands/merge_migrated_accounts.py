@@ -73,23 +73,33 @@ class Command(BaseCommand):
                 )
             )
             if accounts.count() < 2:
-                logger.warn(f"Found {accounts.count()} accounts for {account.provider} {account.provider_id}, skipping")
+                logger.warning(
+                    f"Found {accounts.count()} accounts for {account.provider} {account.provider_id}, skipping"
+                )
                 continue
             # take the first account here because it has the most recently refreshed credentials,
             # and update all credentials/token metadata with first_account's ones
             account = accounts[0]
             token_metadata = account.oauth2_token_metadata
             credentials = account._credentials
-            logger.warn(
+            logger.warning(
                 f"Merging accounts that point to {account.external_service.external_service_name} with id {account.id}"
             )
             for account_to_update in accounts:
-                last_refreshed = getattr(account_to_update.oauth2_token_metadata, 'date_last_refreshed', 'NO_TOKEN_META')
-                creds_id = getattr(account_to_update._credentials, 'id', 'NO_CREDS')
+                last_refreshed = getattr(
+                    account_to_update.oauth2_token_metadata,
+                    "date_last_refreshed",
+                    "NO_TOKEN_META",
+                )
+                creds_id = getattr(account_to_update._credentials, "id", "NO_CREDS")
                 if account_to_update.id == account.id:
-                    logger.warn(f'Using credentials {creds_id} from {account_to_update.id} refreshed on {last_refreshed}')
+                    logger.warning(
+                        f"Using credentials {creds_id} from {account_to_update.id} refreshed on {last_refreshed}"
+                    )
                 else:
-                    logger.warn(f"Updating {account_to_update.id} refreshed on {last_refreshed}, removing {creds_id}")
+                    logger.warning(
+                        f"Updating {account_to_update.id} refreshed on {last_refreshed}, removing {creds_id}"
+                    )
 
             accounts.update(
                 oauth2_token_metadata=token_metadata, _credentials=credentials
