@@ -71,6 +71,7 @@ async def get_osf_user_uri(request: django_http.HttpRequest) -> str | None:
         _response_content = await _response.json()
         return _iri_from_osfapi_resource(_response_content["data"])
 
+
 @async_to_sync
 async def has_osf_permission_on_resource(
     request: django_http.HttpRequest,
