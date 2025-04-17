@@ -201,7 +201,7 @@ class TestResourceReferenceViewSet(TestCase):
         )
         _resp = self._view(
             get_test_request(
-                cookies={settings.USER_REFERENCE_COOKIE: "this is wrong user auth"}
+                cookies={settings.OSF_AUTH_COOKIE_NAME: "this is wrong user auth"}
             ),
             pk=self._resource.pk,
         )
@@ -246,7 +246,7 @@ class TestResourceReferenceRelatedView(TestCase):
         ) + [self._csa]
         _resp = self._related_view(
             get_test_request(
-                cookies={settings.USER_REFERENCE_COOKIE: self._user.user_uri}
+                cookies={settings.OSF_AUTH_COOKIE_NAME: self._user.user_uri}
             ),
             pk=self._resource.pk,
             related_field="configured_storage_addons",

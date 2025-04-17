@@ -62,11 +62,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = env.DEBUG
 SILKY_PYTHON_PROFILER = env.SILKY_PYTHON_PROFILER
 
-USER_REFERENCE_COOKIE = env.OSF_AUTH_COOKIE_NAME
+OSF_AUTH_COOKIE_NAME = env.OSF_AUTH_COOKIE_NAME
 OSF_BASE_URL = env.OSF_BASE_URL.rstrip("/")
 OSF_API_BASE_URL = env.OSF_API_BASE_URL.rstrip("/")
 ALLOWED_RESOURCE_URI_PREFIXES = {OSF_BASE_URL}
-# SESSION_COOKIE_DOMAIN = env.SESSION_COOKIE_DOMAIN
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_COOKIE_NAME = env.OSF_AUTH_COOKIE_NAME
 OSF_AUTH_COOKIE_SECRET = env.OSF_AUTH_COOKIE_SECRET
@@ -76,12 +75,6 @@ CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
         "LOCATION": REDIS_HOST,
-        # 'OPTIONS': {
-        #     'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-        #     'CONNECTION_POOL_KWARGS': {
-        #         'max_connections': 100,
-        #     },
-        # },
     },
 }
 

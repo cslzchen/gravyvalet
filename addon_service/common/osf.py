@@ -54,12 +54,22 @@ async def get_osf_user_uri(request: django_http.HttpRequest) -> str | None:
         raise PermissionDenied(e)
     except hmac_utils.NotUsingHmac:
         pass  # the only acceptable hmac-related error is not using hmac at all
-    # not hmac -- ask osf
-    _auth_headers = _get_osf_auth_headers(request)
+
+    # if not hmac, check to see if it's in shared session
+    _user_referernce_uri = request.session.get["user_reference_uri"]
+    if _user_referernce_uri:
+        return _user_referernce_uri
+
+    # if not in shared session, check to see if there is personal access token
+    _auth_headers = _osf_token_auth_headers(request)
     if not _auth_headers:
         return None
-    return request.session["user_reference_uri"]
-
+    _client = await get_singleton_client_session()
+    async with _client.get(_osfapi_me_url(), headers=_auth_headers) as _response:
+        if HTTPStatus(_response.status).is_client_error:
+            return None
+        _response_content = await _response.json()
+        return _iri_from_osfapi_resource(_response_content["data"])
 
 @async_to_sync
 async def has_osf_permission_on_resource(
@@ -168,9 +178,9 @@ def _get_osf_auth_headers(request: django_http.HttpRequest) -> _HeaderList:
 
 
 def _osf_cookie_auth_headers(request: django_http.HttpRequest) -> _HeaderList:
-    _osf_user_cookie = request.COOKIES.get(settings.USER_REFERENCE_COOKIE)
+    _osf_user_cookie = request.COOKIES.get(settings.OSF_AUTH_COOKIE_NAME)
     return (
-        [("Cookie", f"{settings.USER_REFERENCE_COOKIE}={_osf_user_cookie}")]
+        [("Cookie", f"{settings.OSF_AUTH_COOKIE_NAME}={_osf_user_cookie}")]
         if _osf_user_cookie
         else []
     )

@@ -26,7 +26,7 @@ class BaseAPITest(APITestCase):
             credentials = base64.b64encode(b"admin:password").decode()
             self.client.credentials(HTTP_AUTHORIZATION=f"Basic {credentials}")
         elif auth_type == "session":
-            self.client.cookies[settings.USER_REFERENCE_COOKIE] = "some auth"
+            self.client.cookies[settings.OSF_AUTH_COOKIE_NAME] = "some auth"
         elif auth_type == "no_auth":
             self.client.cookies.clear()
             self.client.credentials()
@@ -210,7 +210,7 @@ class TestWBConfigRetrieval(APITestCase):
     def test_get_waterbutler_credentials__error__no_headers(self):
         # credentials request requires HMAC-signed headers
         # Cookie + OSF-side permissions will not suffice
-        self.client.cookies[settings.USER_REFERENCE_COOKIE] = "some auth"
+        self.client.cookies[settings.OSF_AUTH_COOKIE_NAME] = "some auth"
         _mock_osf = MockOSF()
         _mock_osf.configure_user_role(
             self._user.user_uri, self._configured_storage_addon.resource_uri, "admin"
