@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import re
 from dataclasses import dataclass
+from typing import Literal
 
 from django.core.exceptions import ValidationError
 
@@ -27,13 +28,19 @@ class DataverseLinkImp(LinkAddonHttpRequestorImp):
     """
 
     async def build_url_for_id(self, item_id: str) -> str:
-        match = DATASET_REGEX.match(item_id)
-        if match:
-            persistent_id = match["persistent_id"]
-            return f"{self.config.external_api_url}/dataset.xhtml?persistentId={persistent_id}"
+        if match := DATASET_REGEX.match(item_id):
+            entity_type = "dataset"
         elif match := FILE_REGEX.match(item_id):
-            persistent_id = match["persistent_id"]
-            return f"{self.config.external_api_url}/file.xhtml?persistentId={persistent_id}"
+            entity_type = "file"
+        else:
+            raise ValidationError(f"Invalid {item_id=}")
+
+        persistent_id = match["persistent_id"]
+
+        return self._make_url(entity_type, persistent_id)
+
+    def _make_url(self, entity_type: Literal["file", "dataset"], persistent_id):
+        return f"{self.config.external_web_url}/{entity_type}.xhtml?persistentId={persistent_id}"
 
     async def get_external_account_id(self, _: dict[str, str]) -> str:
         try:
@@ -101,7 +108,7 @@ class DataverseLinkImp(LinkAddonHttpRequestorImp):
             )
         elif match := DATASET_REGEX.match(item_id):
             items = await self._fetch_dataset_files(
-                dataset_id=match["id"], persistent_id=match["persistent_id"]
+                persistent_id=match["persistent_id"]
             )
             return ItemSampleResult(
                 items=items,
@@ -169,12 +176,13 @@ class DataverseLinkImp(LinkAddonHttpRequestorImp):
         if data.get("data"):
             data = data["data"]
 
+        doi = data["dataFile"]["persistentId"]
         return ItemResult(
-            item_id=f"file/{data['dataFile']['persistentId']}",
+            item_id=f"file/{doi}",
             item_name=data["label"],
             item_type=ItemType.RESOURCE,
-            item_link=f'{self.config.external_api_url}/file.xhtml?persistentId={data['dataFile']["persistentId"]}',
-            doi=data["dataFile"]["persistentId"],
+            item_link=self._make_url("file", doi),
+            doi=doi,
         )
 
     def _parse_dataset_files(self, data: dict) -> list[ItemResult]:
@@ -189,16 +197,17 @@ class DataverseLinkImp(LinkAddonHttpRequestorImp):
         if data.get("data"):
             data = data["data"]
         try:
+            doi = data["datasetPersistentId"]
             return ItemResult(
-                item_id=f'dataset/{data["datasetPersistentId"]}',
+                item_id=f"dataset/{doi}",
                 item_name=[
                     item
                     for item in data["metadataBlocks"]["citation"]["fields"]
                     if item["typeName"] == "title"
                 ][0]["value"],
                 item_type=ItemType.FOLDER,
-                item_link=f'{self.config.external_api_url}/dataset.xhtml?persistentId={data["datasetPersistentId"]}',
-                doi=data["datasetPersistentId"],
+                item_link=self._make_url("dataset", doi),
+                doi=doi,
             )
         except (KeyError, IndexError) as e:
             raise ValueError(f"Invalid dataset response: {e=}")

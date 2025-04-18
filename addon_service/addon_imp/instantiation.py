@@ -156,7 +156,7 @@ async def get_link_addon_instance(
         imp = imp_cls(
             network=GravyvaletHttpRequestor(
                 client_session=await get_singleton_client_session(),
-                prefix_url=account.external_service.api_base_url,
+                prefix_url=config.external_api_url,
                 account=account,
             ),
             config=config,

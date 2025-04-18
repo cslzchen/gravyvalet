@@ -28,4 +28,6 @@ class AuthorizedLinkAccount(AuthorizedAccount):
     def config(self) -> LinkConfig:
         return LinkConfig(
             external_api_url=self.api_base_url,
+            external_web_url=self.external_service.externallinkservice.browser_base_url
+            or self.api_base_url,
         )

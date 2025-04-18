@@ -77,6 +77,7 @@ class ItemResult:
 @dataclasses.dataclass(frozen=True)
 class LinkConfig:
     external_api_url: str
+    external_web_url: str
 
 
 @dataclasses.dataclass
