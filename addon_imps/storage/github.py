@@ -2,9 +2,39 @@ from addon_service.common.exceptions import (
     ItemNotFound,
     UnexpectedAddonError,
 )
-from addon_toolkit.cursor import OffsetCursor
+from addon_toolkit.cursor import Cursor
 from addon_toolkit.interfaces import storage
 from addon_toolkit.interfaces.storage import ItemType
+
+
+class PageCursor(Cursor):
+    def __init__(
+        self,
+        this_cursor_str: str,
+        next_cursor_str: str | None = None,
+        prev_cursor_str: str | None = None,
+        first_cursor_str: str | None = None,
+    ):
+        self._this_cursor_str = this_cursor_str
+        self._next_cursor_str = next_cursor_str
+        self._prev_cursor_str = prev_cursor_str
+        self._first_cursor_str = first_cursor_str
+
+    @property
+    def this_cursor_str(self) -> str:
+        return self._this_cursor_str
+
+    @property
+    def next_cursor_str(self) -> str | None:
+        return self._next_cursor_str
+
+    @property
+    def prev_cursor_str(self) -> str | None:
+        return self._prev_cursor_str
+
+    @property
+    def first_cursor_str(self) -> str | None:
+        return self._first_cursor_str
 
 
 ITEM_TYPE_MAP = {
@@ -24,16 +54,37 @@ class GitHubStorageImp(storage.StorageAddonHttpRequestorImp):
             json = await response.json_content()
             return str(json["id"])
 
+    def _parse_page(self, page_cursor: str) -> int:
+        try:
+            page = int(page_cursor)
+        except ValueError:
+            page = 1
+        return page if page > 0 else 1
+
     async def list_root_items(self, page_cursor: str = "") -> storage.ItemSampleResult:
+        page = self._parse_page(page_cursor)
+        per_page = 30
         async with self.network.GET(
-            "user/repos",
+            "user/repos", query={"page": str(page), "per_page": str(per_page)}
         ) as response:
             if response.http_status == 200:
                 json = await response.json_content()
                 items = [self._parse_github_repo(repo) for repo in json]
+                next_page = str(page + 1) if len(items) == per_page else None
                 return storage.ItemSampleResult(
                     items=items, total_count=len(items)
-                ).with_cursor(self._create_offset_cursor(len(items), page_cursor))
+                ).with_cursor(
+                    PageCursor(
+                        this_cursor_str=str(page),
+                        next_cursor_str=next_page,
+                        prev_cursor_str=str(page - 1) if page > 1 else None,
+                        first_cursor_str="1",
+                    )
+                )
+            elif response.http_status == 404:
+                raise ItemNotFound
+            else:
+                raise UnexpectedAddonError
 
     async def build_wb_config(self) -> dict:
         owner, repo, _ = self._parse_github_item_id(self.config.connected_root_id)
@@ -76,36 +127,36 @@ class GitHubStorageImp(storage.StorageAddonHttpRequestorImp):
         item_type: storage.ItemType | None = None,
     ) -> storage.ItemSampleResult:
         owner, repo, path = self._parse_github_item_id(item_id)
-        query_params = self._params_from_cursor(page_cursor)
+        page = self._parse_page(page_cursor)
+        per_page = 30
         async with self.network.GET(
             f"repos/{owner}/{repo}/contents/{path}",
-            query=query_params,
+            query={"page": str(page), "per_page": str(per_page)},
         ) as response:
             if response.http_status == 200:
                 json = await response.json_content()
                 git_hub_item_type = ITEM_TYPE_MAP[item_type] if item_type else None
-                items = []
-                for entry in json:
-                    if git_hub_item_type and entry["type"] != git_hub_item_type:
-                        continue
-                    items.append(self._parse_github_item(entry, full_name=item_id))
+                items = [
+                    self._parse_github_item(entry, full_name=item_id)
+                    for entry in json
+                    if not git_hub_item_type or entry["type"] == git_hub_item_type
+                ]
+                next_page = str(page + 1) if len(items) == per_page else None
 
                 return storage.ItemSampleResult(
                     items=items, total_count=len(items)
-                ).with_cursor(self._create_offset_cursor(len(items), page_cursor))
+                ).with_cursor(
+                    PageCursor(
+                        this_cursor_str=str(page),
+                        next_cursor_str=next_page,
+                        prev_cursor_str=str(page - 1) if page > 1 else None,
+                        first_cursor_str="1",
+                    )
+                )
             elif response.http_status == 404:
                 raise ItemNotFound
             else:
                 raise UnexpectedAddonError
-
-    def _params_from_cursor(self, cursor: str = "") -> dict[str, str]:
-        if cursor:
-            offset_cursor = OffsetCursor.from_str(cursor)
-            return {
-                "page": str(offset_cursor.offset),
-                "per_page": str(offset_cursor.limit),
-            }
-        return {}
 
     def _parse_github_item_id(self, item_id: str) -> tuple[str, str, str]:
         try:
@@ -116,18 +167,6 @@ class GitHubStorageImp(storage.StorageAddonHttpRequestorImp):
             raise ValueError(
                 f"Invalid item_id format: {item_id}. Expected 'owner/repo:path'"
             )
-
-    def _create_offset_cursor(
-        self, total_items: int, current_cursor: str
-    ) -> OffsetCursor:
-        if not current_cursor:
-            return OffsetCursor(offset=0, limit=total_items, total_count=total_items)
-        cursor = OffsetCursor.from_str(current_cursor)
-        return OffsetCursor(
-            offset=cursor.offset + total_items,
-            limit=cursor.limit,
-            total_count=total_items,
-        )
 
     def _parse_github_item(self, item_json: dict, full_name: str) -> storage.ItemResult:
         item_type = (
@@ -140,7 +179,7 @@ class GitHubStorageImp(storage.StorageAddonHttpRequestorImp):
             item_id = item_json["path"]
         return storage.ItemResult(
             item_id=item_id,
-            item_name=item_json["name"],
+            item_name=item_name,
             item_type=item_type,
             may_contain_root_candidates=False,
             can_be_root=False,

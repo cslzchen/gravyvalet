@@ -40,6 +40,7 @@ app = Celery(
         "addon_service.tasks.invocation.*": {"queue": gv_interactive_queue},
         "addon_service.tasks.osf_backchannel.*": {"queue": gv_reactive_queue},
         "addon_service.tasks.key_rotation.*": {"queue": gv_chill_queue},
+        "addon_service.tasks.clear_expired_sessions.*": {"queue": gv_chill_queue},
         "addon_service.management.commands.refresh_addon_tokens.*": {
             "queue": gv_chill_queue
         },

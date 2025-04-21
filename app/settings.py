@@ -193,7 +193,7 @@ REST_FRAMEWORK = {
         "rest_framework_json_api.renderers.BrowsableAPIRenderer",
     ),
     "DEFAULT_FILTER_BACKENDS": (
-        "rest_framework_json_api.filters.QueryParameterValidationFilter",
+        "addon_service.common.queryparams_filter.AllowedQueryParamsFilter",
         "rest_framework_json_api.filters.OrderingFilter",
         "rest_framework_json_api.django_filters.DjangoFilterBackend",
         "rest_framework.filters.SearchFilter",
@@ -261,5 +261,9 @@ CELERY_BEAT_SCHEDULE = {
                 "mendeley": 14,  # http://dev.mendeley.com/reference/topics/authorization_overview.html
             },
         },
+    },
+    "clear_expired_sessions": {
+        "task": "addon_service.tasks.clear_expired_sessions.clear_expired_sessions",
+        "schedule": crontab(minute=0, hour=7),  # Daily midnight,
     },
 }
