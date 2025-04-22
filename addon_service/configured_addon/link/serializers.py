@@ -2,6 +2,7 @@ from rest_framework.fields import (
     CharField,
     URLField,
 )
+from rest_framework_json_api import serializers
 from rest_framework_json_api.relations import ResourceRelatedField
 from rest_framework_json_api.utils import get_resource_type_from_model
 
@@ -78,3 +79,24 @@ class ConfiguredLinkAddonSerializer(ConfiguredAddonSerializer):
             "resource_type",
             "target_id",
         ]
+
+
+class VerifiedLink(serializers.Serializer):
+    """Serialize ConfiguredStorageAddon information required by WaterButler.
+
+    The returned data should share a shape with the existing `serialize_waterbutler_credentials`
+    and `serialize_waterbutler_settings` functions used by the OSF-based Addons.
+
+    NB: The Boa addon needs credentials from GV, and this seems like a good short-term
+    place to hang it. Boa doesn't actually connect with WB, so this will probably be
+    refactored in the future. But for now, any configured_storage_addon could actually
+    be a configured_computed_addon.
+    """
+
+    class JSONAPIMeta:
+        resource_name = "verified-link"
+
+    target_url = URLField(read_only=True)
+    target_id = CharField()
+    resource_type = EnumNameChoiceField(enum_cls=SupportedResourceTypes)
+    service_name = CharField(source="external_service.external_service_name")
