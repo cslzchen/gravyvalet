@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 
 from addon_service.authorized_account.link.models import AuthorizedLinkAccount
@@ -14,6 +15,7 @@ def validate_supported_features(value):
 
 
 class ExternalLinkService(ExternalService):
+    browser_base_url = models.URLField(blank=True, default="")
     int_supported_resource_types = models.BigIntegerField(
         validators=[validate_supported_features], null=True
     )
@@ -33,6 +35,10 @@ class ExternalLinkService(ExternalService):
     def clean(self):
         super().clean()
         validate_link_imp_number(self.int_addon_imp)
+        if not self.api_base_url and not self.browser_base_url:
+            raise ValidationError(
+                "External Link Service should provide at least one of `browser_base_url` or `api_base_url`"
+            )
 
     @property
     def authorized_link_accounts(self):

@@ -32,7 +32,6 @@ class AuthorizedLinkAccountSerializer(AuthorizedAccountSerializer):
     )
     configured_link_addons = HyperlinkedRelatedField(
         many=True,
-        source="configured_addons",
         queryset=ConfiguredLinkAddon.objects.active(),
         related_link_view_name=view_names.related_view(RESOURCE_TYPE),
         required=False,

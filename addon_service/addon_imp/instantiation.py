@@ -21,6 +21,7 @@ from addon_toolkit.interfaces.link import (
     LinkAddonClientRequestorImp,
     LinkAddonHttpRequestorImp,
     LinkAddonImp,
+    LinkConfig,
 )
 from addon_toolkit.interfaces.storage import (
     StorageAddonClientRequestorImp,
@@ -43,7 +44,7 @@ if TYPE_CHECKING:
 async def get_addon_instance(
     imp_cls: type[AddonImp],
     account: AuthorizedAccount,
-    config: StorageConfig | CitationConfig | ComputingConfig,
+    config: StorageConfig | CitationConfig | ComputingConfig | LinkConfig,
 ) -> AddonImp:
     if issubclass(imp_cls, StorageAddonImp):
         return await get_storage_addon_instance(imp_cls, account, config)
@@ -52,7 +53,7 @@ async def get_addon_instance(
     elif issubclass(imp_cls, ComputingAddonImp):
         return await get_computing_addon_instance(imp_cls, account, config)
     elif issubclass(imp_cls, LinkAddonImp):
-        return await get_link_addon_instance(imp_cls, account)
+        return await get_link_addon_instance(imp_cls, account, config)
     raise ValueError(f"unknown addon type {imp_cls}")
 
 
@@ -145,8 +146,7 @@ get_computing_addon_instance__blocking = async_to_sync(get_computing_addon_insta
 
 
 async def get_link_addon_instance(
-    imp_cls: type[LinkAddonImp],
-    account: AuthorizedLinkAccount,
+    imp_cls: type[LinkAddonImp], account: AuthorizedLinkAccount, config: LinkConfig
 ) -> LinkAddonImp:
     """create an instance of a `linkAddonImp`"""
 
@@ -156,12 +156,13 @@ async def get_link_addon_instance(
         imp = imp_cls(
             network=GravyvaletHttpRequestor(
                 client_session=await get_singleton_client_session(),
-                prefix_url=account.external_service.api_base_url,
+                prefix_url=config.external_api_url,
                 account=account,
             ),
+            config=config,
         )
     if issubclass(imp_cls, LinkAddonClientRequestorImp):
-        imp = imp_cls(credentials=await account.get_credentials__async())
+        imp = imp_cls(credentials=await account.get_credentials__async(), config=config)
 
     return imp
 
