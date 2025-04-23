@@ -14,6 +14,16 @@ jobs:
         postgres-version: ['15']
     runs-on: ubuntu-latest
     services:
+      redis:
+        image: redis
+        # Set health checks to wait until redis has started
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
       rabbitmq:
         image: rabbitmq:latest
         ports:
@@ -63,3 +73,4 @@ jobs:
           POSTGRES_DB: gravyvalettest
           POSTGRES_USER: postgres
           SECRET_KEY: oh-so-secret
+          REDIS_HOST: redis://localhost:6379
