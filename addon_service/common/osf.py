@@ -56,7 +56,7 @@ async def get_osf_user_uri(request: django_http.HttpRequest) -> str | None:
         pass  # the only acceptable hmac-related error is not using hmac at all
 
     # if not hmac, check to see if it's in shared session
-    _user_referernce_uri = request.session.get["user_reference_uri"]
+    _user_referernce_uri = request.session.get("user_reference_uri")
     if _user_referernce_uri:
         return _user_referernce_uri
 
