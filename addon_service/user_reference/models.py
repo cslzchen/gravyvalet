@@ -76,8 +76,11 @@ class UserReference(AddonsServiceBaseModel):
         return self.user_uri
 
     @property
-    def guid(self) -> str:
-        return uri_regex.match(self.user_uri)
+    def guid(self) -> str | None:
+        match = uri_regex.match(self.user_uri)
+        if match:
+            return match["id"]
+        return None
 
     def deactivate(self):
         self.deactivated = timezone.now()
