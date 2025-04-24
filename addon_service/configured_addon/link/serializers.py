@@ -2,6 +2,7 @@ from rest_framework.fields import (
     CharField,
     URLField,
 )
+from rest_framework_json_api import serializers
 from rest_framework_json_api.relations import ResourceRelatedField
 from rest_framework_json_api.utils import get_resource_type_from_model
 
@@ -78,3 +79,19 @@ class ConfiguredLinkAddonSerializer(ConfiguredAddonSerializer):
             "resource_type",
             "target_id",
         ]
+
+
+class VerifiedLink(serializers.Serializer):
+    """Serialize ConfiguredLinkAddon information required by OSF.
+
+    The information is shaped for osf to be able to update datacite and share metadata
+    with minimal performance footprint
+    """
+
+    class JSONAPIMeta:
+        resource_name = "verified-link"
+
+    target_url = URLField(read_only=True)
+    target_id = CharField()
+    resource_type = EnumNameChoiceField(enum_cls=SupportedResourceTypes)
+    service_name = CharField(source="external_service.external_service_name")
