@@ -25,10 +25,10 @@ class ConfiguredLinkAddonViewSet(ConfiguredAddonViewSet):
     @action(
         detail=True,
         methods=[HTTPMethod.GET],
-        url_name="verified-link",
-        url_path="verified-link",
+        url_name="verified-links",
+        url_path="verified-links",
     )
-    def verified_link(self, request, pk=None):
+    def get_verified_links(self, request, pk=None):
         addons: ConfiguredLinkAddon = ConfiguredLinkAddon.objects.filter(
             authorized_resource__resource_uri__in=[
                 f"{prefix}/{pk}" for prefix in ALLOWED_RESOURCE_URI_PREFIXES

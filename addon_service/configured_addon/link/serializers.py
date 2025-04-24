@@ -82,16 +82,7 @@ class ConfiguredLinkAddonSerializer(ConfiguredAddonSerializer):
 
 
 class VerifiedLink(serializers.Serializer):
-    """Serialize ConfiguredStorageAddon information required by WaterButler.
-
-    The returned data should share a shape with the existing `serialize_waterbutler_credentials`
-    and `serialize_waterbutler_settings` functions used by the OSF-based Addons.
-
-    NB: The Boa addon needs credentials from GV, and this seems like a good short-term
-    place to hang it. Boa doesn't actually connect with WB, so this will probably be
-    refactored in the future. But for now, any configured_storage_addon could actually
-    be a configured_computed_addon.
-    """
+    """Serialize VerifiedLinks information required by OSF."""
 
     class JSONAPIMeta:
         resource_name = "verified-link"
