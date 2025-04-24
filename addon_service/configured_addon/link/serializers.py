@@ -82,7 +82,11 @@ class ConfiguredLinkAddonSerializer(ConfiguredAddonSerializer):
 
 
 class VerifiedLink(serializers.Serializer):
-    """Serialize VerifiedLinks information required by OSF."""
+    """Serialize ConfiguredLinkAddon information required by OSF.
+
+    The information is shaped for osf to be able to update datacite and share metadata
+    with minimal performance footprint
+    """
 
     class JSONAPIMeta:
         resource_name = "verified-link"
