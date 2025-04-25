@@ -19,7 +19,7 @@ class SessionUserIsOwner(permissions.BasePermission):
     """for object permissions on objects with `owner_uri`"""
 
     def has_object_permission(self, request, view, obj):
-        session_user_uri = request.session.get("user_reference_uri")
+        session_user_uri = request.session.get("user_reference_uri", request.user_uri)
         if session_user_uri:
             return session_user_uri == obj.owner_uri
         return False
