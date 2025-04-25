@@ -12,7 +12,12 @@ class IsAuthenticated(permissions.BasePermission):
     """allow any logged-in user"""
 
     def has_permission(self, request, view):
-        return request.session.get("user_reference_uri") is not None
+        return (
+            request.session.get(
+                "user_reference_uri", getattr(request, "user_uri", None)
+            )
+            is not None
+        )
 
 
 class SessionUserIsOwner(permissions.BasePermission):
