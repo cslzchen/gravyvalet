@@ -51,6 +51,7 @@ app = Celery(
             "queue": gv_chill_queue
         },
         "osf.*": {"queue": osf_high_queue},
+        "website.*": {"queue": osf_high_queue},
     },
     include=[
         "addon_service.tasks",

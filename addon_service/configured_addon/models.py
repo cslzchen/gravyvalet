@@ -96,8 +96,8 @@ class ConfiguredAddon(AddonsServiceBaseModel):
             app.send_task(
                 "osf.tasks.log_gv_addon",
                 kwargs={
-                    "node_url": self.resource_uri,
-                    "user_url": self.owner_uri,
+                    "node_guid": self.authorized_resource.guid,
+                    "user_guid": self.account_owner.guid,
                     "addon": self.display_name,
                     "action": "addon_added",
                 },

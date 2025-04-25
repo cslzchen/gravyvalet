@@ -6,6 +6,7 @@ from addon_service.authorized_account.computing.models import AuthorizedComputin
 from addon_service.authorized_account.link.models import AuthorizedLinkAccount
 from addon_service.authorized_account.storage.models import AuthorizedStorageAccount
 from addon_service.common.base_model import AddonsServiceBaseModel
+from addon_service.common.regex import uri_regex
 from addon_service.configured_addon.computing.models import ConfiguredComputingAddon
 from addon_service.configured_addon.storage.models import ConfiguredStorageAddon
 from addon_service.resource_reference.models import ResourceReference
@@ -73,6 +74,13 @@ class UserReference(AddonsServiceBaseModel):
     @property
     def owner_uri(self) -> str:
         return self.user_uri
+
+    @property
+    def guid(self) -> str | None:
+        match = uri_regex.match(self.user_uri)
+        if match:
+            return match["id"]
+        return None
 
     def deactivate(self):
         self.deactivated = timezone.now()

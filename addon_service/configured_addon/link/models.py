@@ -7,6 +7,7 @@ from addon_toolkit.interfaces.link import (
     LinkConfig,
     SupportedResourceTypes,
 )
+from app.celery import app
 
 
 def is_supported_resource_type(resource_type: int):
@@ -19,7 +20,6 @@ def is_supported_resource_type(resource_type: int):
 
 
 class ConfiguredLinkAddon(ConfiguredAddon):
-
     target_id = models.CharField()
     int_resource_type = models.BigIntegerField(validators=[is_supported_resource_type])
 
@@ -30,6 +30,13 @@ class ConfiguredLinkAddon(ConfiguredAddon):
     @resource_type.setter
     def resource_type(self, value) -> None:
         self.int_resource_type = value.value
+
+    def save(self, *args, full_clean=True, **kwargs):
+        super().save(*args, full_clean=full_clean, **kwargs)
+        app.send_task(
+            "website.identifiers.tasks.task__update_doi_metadata_with_verified_links",
+            kwargs={"target_guid": self.authorized_resource.guid},
+        )
 
     def target_url(self):
         if self.target_id:
