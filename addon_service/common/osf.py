@@ -11,6 +11,7 @@ from django.core.exceptions import PermissionDenied
 
 from addon_service.common import hmac as hmac_utils
 from addon_service.common.aiohttp_session import get_singleton_client_session
+from addon_service.common.get_user_uri import get_user_uri
 from addon_toolkit import AddonCapabilities
 
 
@@ -56,7 +57,7 @@ async def get_osf_user_uri(request: django_http.HttpRequest) -> str | None:
         pass  # the only acceptable hmac-related error is not using hmac at all
 
     # if not hmac, check to see if it's in shared session
-    _user_referernce_uri = request.session.get("user_reference_uri")
+    _user_referernce_uri = get_user_uri(request)
     if _user_referernce_uri:
         return _user_referernce_uri
 
