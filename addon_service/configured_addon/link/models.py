@@ -24,8 +24,8 @@ class ConfiguredLinkAddon(ConfiguredAddon):
     int_resource_type = models.BigIntegerField(validators=[is_supported_resource_type])
 
     @property
-    def resource_type(self) -> str:
-        return SupportedResourceTypes(self.int_resource_type).name
+    def resource_type(self) -> SupportedResourceTypes:
+        return SupportedResourceTypes(self.int_resource_type)
 
     @resource_type.setter
     def resource_type(self, value) -> None:
