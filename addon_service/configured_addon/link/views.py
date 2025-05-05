@@ -9,7 +9,7 @@ from app.settings import ALLOWED_RESOURCE_URI_PREFIXES
 from .models import ConfiguredLinkAddon
 from .serializers import (
     ConfiguredLinkAddonSerializer,
-    VerifiedLink,
+    VerifiedLinkSerializer,
 )
 
 
@@ -36,4 +36,4 @@ class ConfiguredLinkAddonViewSet(ConfiguredAddonViewSet):
         ).select_related("base_account__external_service")
         self.resource_name = "verified-link"
 
-        return Response(VerifiedLink(addons, many=True).data)
+        return Response(VerifiedLinkSerializer(addons, many=True).data)
