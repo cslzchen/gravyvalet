@@ -11,6 +11,8 @@ from app.celery import app
 
 
 def is_supported_resource_type(resource_type: int):
+    if not resource_type:
+        return
     try:
         resource_type = SupportedResourceTypes(resource_type)
         if len(resource_type) != 1:
@@ -20,12 +22,16 @@ def is_supported_resource_type(resource_type: int):
 
 
 class ConfiguredLinkAddon(ConfiguredAddon):
-    target_id = models.CharField()
-    int_resource_type = models.BigIntegerField(validators=[is_supported_resource_type])
+    target_id = models.CharField(default=None, null=True, blank=True)
+    int_resource_type = models.BigIntegerField(
+        default=None, null=True, blank=True, validators=[is_supported_resource_type]
+    )
 
     @property
-    def resource_type(self) -> SupportedResourceTypes:
-        return SupportedResourceTypes(self.int_resource_type)
+    def resource_type(self) -> SupportedResourceTypes | None:
+        if not self.int_resource_type:
+            return SupportedResourceTypes(self.int_resource_type)
+        return None
 
     @resource_type.setter
     def resource_type(self, value) -> None:
@@ -33,21 +39,23 @@ class ConfiguredLinkAddon(ConfiguredAddon):
 
     def save(self, *args, full_clean=True, **kwargs):
         super().save(*args, full_clean=full_clean, **kwargs)
-        app.send_task(
-            "website.identifiers.tasks.task__update_doi_metadata_with_verified_links",
-            kwargs={"target_guid": self.authorized_resource.guid},
-        )
+        if self.resource_type and self.target_id:
+            app.send_task(
+                "website.identifiers.tasks.task__update_doi_metadata_with_verified_links",
+                kwargs={"target_guid": self.authorized_resource.guid},
+            )
 
     def target_url(self):
-        if self.target_id:
-            from addon_service.addon_imp.instantiation import (
-                get_link_addon_instance__blocking,
-            )
+        from addon_service.addon_imp.instantiation import (
+            get_link_addon_instance__blocking,
+        )
 
-            addon = get_link_addon_instance__blocking(
-                self.imp_cls, self.base_account, self.config
-            )
-            return async_to_sync(addon.build_url_for_id)(self.target_id)
+        if not self.target_id:
+            return None
+        addon = get_link_addon_instance__blocking(
+            self.imp_cls, self.base_account, self.config
+        )
+        return async_to_sync(addon.build_url_for_id)(self.target_id)
 
     @property
     def config(self) -> LinkConfig:
