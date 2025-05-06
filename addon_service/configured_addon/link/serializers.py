@@ -25,7 +25,7 @@ RESOURCE_TYPE = get_resource_type_from_model(ConfiguredLinkAddon)
 class ConfiguredLinkAddonSerializer(ConfiguredAddonSerializer):
     """api serializer for the `ConfiguredLinkAddon` model"""
 
-    target_url = URLField(allow_null=True, allow_blank=True, read_only=True)
+    target_url = URLField(read_only=True)
     target_id = CharField(required=False)
     resource_type = EnumNameChoiceField(
         required=False,
