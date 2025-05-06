@@ -26,9 +26,10 @@ class ConfiguredLinkAddonSerializer(ConfiguredAddonSerializer):
     """api serializer for the `ConfiguredLinkAddon` model"""
 
     target_url = URLField(allow_null=True, allow_blank=True, read_only=True)
-    target_id = CharField(allow_null=True, allow_blank=True)
+    target_id = CharField(required=False)
     resource_type = EnumNameChoiceField(
-        allow_null=True, allow_blank=True, enum_cls=SupportedResourceTypes
+        required=False,
+        enum_cls=SupportedResourceTypes,
     )
 
     connected_operations = DataclassRelatedLinkField(
