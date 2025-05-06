@@ -29,7 +29,7 @@ class ConfiguredLinkAddon(ConfiguredAddon):
 
     @property
     def resource_type(self) -> SupportedResourceTypes | None:
-        if not self.int_resource_type:
+        if self.int_resource_type:
             return SupportedResourceTypes(self.int_resource_type)
         return None
 
