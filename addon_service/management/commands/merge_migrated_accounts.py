@@ -5,6 +5,7 @@ from django.db import transaction
 from django.db.models import (
     Count,
     F,
+    Subquery,
 )
 
 from addon_service.authorized_account.citation.models import AuthorizedCitationAccount
@@ -12,6 +13,7 @@ from addon_service.authorized_account.computing.models import AuthorizedComputin
 from addon_service.authorized_account.storage.models import AuthorizedStorageAccount
 from addon_service.osf_models.models import (
     ExternalAccount,
+    Guid,
     UserToExternalAccount,
 )
 
@@ -41,17 +43,37 @@ def get_class(integration_type):
         raise
 
 
+def get_user_id(guid: str):
+    return Guid.objects.get(_id=guid).object_id
+
+
 class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("--fake", action="store_true")
+        parser.add_argument("--user", type=str, default="4k2se")
 
     @transaction.atomic
     def handle(self, *args, **options):
-        shared_ids = (
-            UserToExternalAccount.objects.values("externalaccount")
-            .annotate(count=Count("osfuser"))
-            .filter(count__gte=2)
-        )
+        if not options.get("user"):
+            shared_ids = (
+                UserToExternalAccount.objects.values("externalaccount")
+                .annotate(count=Count("osfuser"))
+                .filter(count__gte=2)
+            )
+        else:
+            user_id = get_user_id(options.get("user"))
+            shared_ids = (
+                UserToExternalAccount.objects.values("externalaccount")
+                .annotate(count=Count("osfuser"))
+                .filter(
+                    externalaccount_id__in=Subquery(
+                        UserToExternalAccount.objects.filter(
+                            osfuser_id=user_id
+                        ).values_list("externalaccount")
+                    ),
+                    count__gte=2,
+                )
+            )
         shared_accounts = ExternalAccount.objects.filter(
             id__in=[item.get("externalaccount") for item in shared_ids],
             provider__in=services.keys(),
