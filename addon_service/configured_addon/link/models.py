@@ -22,6 +22,10 @@ def is_supported_resource_type(resource_type: int):
 
 
 class ConfiguredLinkAddon(ConfiguredAddon):
+    # Note: ideally, `target_id` and `int_resource_type` are both required and
+    # should be present on first save. However, due to a limitation on how our
+    # FE workflow is currently wired, a `ConfiguredLinkAddon` instance must be
+    # saved before both attributes can be set. Thus, we allow null and blank.
     target_id = models.CharField(default=None, null=True, blank=True)
     int_resource_type = models.BigIntegerField(
         default=None, null=True, blank=True, validators=[is_supported_resource_type]
@@ -39,6 +43,7 @@ class ConfiguredLinkAddon(ConfiguredAddon):
 
     def save(self, *args, full_clean=True, **kwargs):
         super().save(*args, full_clean=full_clean, **kwargs)
+        # Only send for OSF task after the addon has been fully configured
         if self.resource_type and self.target_id:
             app.send_task(
                 "website.identifiers.tasks.task__update_doi_metadata_with_verified_links",
