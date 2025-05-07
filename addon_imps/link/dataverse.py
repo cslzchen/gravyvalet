@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import re
 from dataclasses import dataclass
+from http import HTTPStatus
 from typing import Literal
 
 from django.core.exceptions import ValidationError
@@ -122,12 +123,13 @@ class DataverseLinkImp(LinkAddonHttpRequestorImp):
             f"api/dataverses/{dataverse_id}/contents"
         ) as response:
             response_content = await response.json_content()
-            return await asyncio.gather(
+            items = await asyncio.gather(
                 *[
                     self._get_dataverse_or_dataset_item(item)
                     for item in response_content["data"]
                 ]
             )
+            return [item for item in items if item]
 
     async def _get_dataverse_or_dataset_item(self, item: dict):
         match item["type"]:
@@ -152,10 +154,12 @@ class DataverseLinkImp(LinkAddonHttpRequestorImp):
         dataset_id: str = None,
         persistent_id: str = None,
         parser=None,
-    ) -> ItemResult | list[ItemResult]:
+    ) -> ItemResult | list[ItemResult] | None:
         url = f"api/datasets/{':persistentId' if persistent_id else dataset_id}/versions/:latest-published"
         query = {"persistentId": persistent_id} if persistent_id else {}
         async with self.network.GET(url, query=query) as response:
+            if response.http_status == HTTPStatus.NOT_FOUND:
+                return None
             return parser(await response.json_content())
 
     async def _fetch_dataset(
