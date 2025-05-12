@@ -39,7 +39,8 @@ class ConfiguredLinkAddon(ConfiguredAddon):
 
     @resource_type.setter
     def resource_type(self, value) -> None:
-        self.int_resource_type = value.value
+        if value is not None:
+            self.int_resource_type = value.value
 
     def save(self, *args, full_clean=True, **kwargs):
         super().save(*args, full_clean=full_clean, **kwargs)
