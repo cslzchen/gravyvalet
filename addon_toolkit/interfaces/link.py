@@ -53,7 +53,7 @@ class SupportedResourceTypes(enum.Flag):
     Journal = enum.auto()
     JournalArticle = enum.auto()
     Model = enum.auto()
-    OutputManagement_plan = enum.auto()
+    OutputManagementPlan = enum.auto()
     PeerReview = enum.auto()
     PhysicalObject = enum.auto()
     Preprint = enum.auto()
