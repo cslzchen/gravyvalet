@@ -193,6 +193,7 @@ def get_configured_addon(node_guid, provider):
             base_account__external_service=external_service,
         )
     except ConfiguredAddon.DoesNotExist:
+        configured_addon = None
         print("ConfiguredAddon not found")
 
     return configured_addon
@@ -269,6 +270,10 @@ def get_or_create_authorized_account(external_account, provider, user_guid):
 # external_account_id as the ExternalAccount's provider_id
 def configured_addon_has_correct_base_account(external_account, node_guid, provider):
     configured_addon = get_configured_addon(node_guid, provider)
+    if not configured_addon:
+        # if configured_addon is None, return True to skip fixing it.
+        print(f"\t\t\t Configured addon not found for node {node_guid} on {provider}")
+        return True
     if (
         configured_addon.base_account.external_account_id
         == external_account.provider_id
