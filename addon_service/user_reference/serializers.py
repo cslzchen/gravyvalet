@@ -63,7 +63,7 @@ class UserReferenceSerializer(serializers.HyperlinkedModelSerializer):
             "addon_service.serializers.AuthorizedComputingAccountSerializer"
         ),
         "authorized_link_accounts": (
-            "addon_service.serializers.AuthorizedComputingAccountSerializer"
+            "addon_service.serializers.AuthorizedLinkAccountSerializer"
         ),
         "configured_resources": (
             "addon_service.serializers.ResourceReferenceSerializer"
