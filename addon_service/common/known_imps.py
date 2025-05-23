@@ -72,24 +72,33 @@ def get_imp_number(imp: type[AddonImp]) -> int:
 
 @enum.unique
 class KnownAddonImps(enum.Enum):
-    """Static mapping from API-facing name for an AddonImp to the Imp itself"""
+    """Static mapping from API-facing name for an AddonImp to the Imp itself.
 
+    Note: Grouped by type and then ordered by respective AddonImpNumbers.
+    """
+
+    # Type: Storage
     BOX = box_dot_com.BoxDotComStorageImp
     S3 = s3.S3StorageImp
-    ONEDRIVE = onedrive.OneDriveStorageImp
-    ZOTERO = zotero_org.ZoteroOrgCitationImp
     GOOGLEDRIVE = google_drive.GoogleDriveStorageImp
-    FIGSHARE = figshare.FigshareStorageImp
-    MENDELEY = mendeley.MendeleyCitationImp
-    BITBUCKET = bitbucket.BitbucketStorageImp
-    DATAVERSE = dataverse.DataverseStorageImp
-    OWNCLOUD = owncloud.OwnCloudStorageImp
-    LINK_DATAVERSE = link_dataverse.DataverseLinkImp
-    GITHUB = github.GitHubStorageImp
-    GITLAB = gitlab.GitlabStorageImp
     DROPBOX = dropbox.DropboxStorageImp
+    FIGSHARE = figshare.FigshareStorageImp
+    ONEDRIVE = onedrive.OneDriveStorageImp
+    OWNCLOUD = owncloud.OwnCloudStorageImp
+    DATAVERSE = dataverse.DataverseStorageImp
+    GITLAB = gitlab.GitlabStorageImp
+    BITBUCKET = bitbucket.BitbucketStorageImp
+    GITHUB = github.GitHubStorageImp
 
+    # Type: Citation
+    ZOTERO = zotero_org.ZoteroOrgCitationImp
+    MENDELEY = mendeley.MendeleyCitationImp
+
+    # Type: Cloud Computing
     BOA = boa.BoaComputingImp
+
+    # Type: Link
+    LINK_DATAVERSE = link_dataverse.DataverseLinkImp
 
     if __debug__:
         BLARG = my_blarg.MyBlargStorage
@@ -98,12 +107,16 @@ class KnownAddonImps(enum.Enum):
 @enum_names_same_as(KnownAddonImps)
 @enum.unique
 class AddonImpNumbers(enum.Enum):
-    """Static mapping from each AddonImp name to a unique integer (for database use)"""
+    """Static mapping from each AddonImp name to a unique integer (for database use)
 
+    Note: Ideally, we should "prefix" the number by type and take future scalability into account.
+    e.g. Storage type uses 10xx, Citation type uses 11xx, Cloud Computing type uses 12xx and LINK type uses 13xx.
+    Consider this a future improvement when we run out of 1001~1019 for both storage and citation addons.
+    """
+
+    # Type: Storage
     BOX = 1001
-    ZOTERO = 1002
     S3 = 1003
-    MENDELEY = 1004
     GOOGLEDRIVE = 1005
     DROPBOX = 1006
     FIGSHARE = 1007
@@ -112,11 +125,17 @@ class AddonImpNumbers(enum.Enum):
     DATAVERSE = 1010
     GITLAB = 1011
     BITBUCKET = 1012
-
-    LINK_DATAVERSE = 1030
     GITHUB = 1013
 
+    # Type: Citation
+    ZOTERO = 1002
+    MENDELEY = 1004
+
+    # Type: Cloud Computing
     BOA = 1020
+
+    # Type: Link
+    LINK_DATAVERSE = 1030
 
     if __debug__:
         BLARG = -7
