@@ -47,7 +47,7 @@ class ConfiguredLinkAddon(ConfiguredAddon):
         # Only send for OSF task after the addon has been fully configured
         if self.resource_type and self.target_id:
             app.send_task(
-                "website.identifiers.tasks.task__update_doi_metadata_with_verified_links",
+                "website.identifiers.tasks.task__update_verified_links",
                 kwargs={"target_guid": self.authorized_resource.guid},
             )
 
