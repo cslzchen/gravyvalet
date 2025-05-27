@@ -15,19 +15,10 @@ from addon_service.external_service.models import ExternalService
 from addon_toolkit.interfaces.link import SupportedResourceTypes
 
 
-# TODO: need to trim down the features
 class LinkSupportedFeatures(Flag):
-    ADD_UPDATE_FILES = auto()
-    ADD_UPDATE_FILES_PARTIAL = auto()
-    DELETE_FILES = auto()
-    DELETE_FILES_PARTIAL = auto()
-    FORKING = auto()
-    LOGS = auto()
+    FORKING_PARTIAL = auto()
+    LOGS_PARTIAL = auto()
     PERMISSIONS = auto()
-    REGISTERING = auto()
-    FILE_VERSIONS = auto()
-    COPY_INTO = auto()
-    DOWNLOAD_AS_ZIP = auto()
 
 
 def validate_supported_features(value):
