@@ -1,3 +1,8 @@
+from enum import (
+    Flag,
+    auto,
+)
+
 from django.core.exceptions import ValidationError
 from django.db import models
 
@@ -10,19 +15,42 @@ from addon_service.external_service.models import ExternalService
 from addon_toolkit.interfaces.link import SupportedResourceTypes
 
 
+class LinkSupportedFeatures(Flag):
+    FORKING_PARTIAL = auto()
+    LOGS_PARTIAL = auto()
+    PERMISSIONS = auto()
+
+
 def validate_supported_features(value):
+    _validate_enum_value(LinkSupportedFeatures, value)
+
+
+def validate_supported_resource_types(value):
     _validate_enum_value(SupportedResourceTypes, value)
 
 
 class ExternalLinkService(ExternalService):
     browser_base_url = models.URLField(blank=True, default="")
-    int_supported_resource_types = models.BigIntegerField(
+    int_supported_features = models.IntegerField(
         validators=[validate_supported_features], null=True
+    )
+    int_supported_resource_types = models.BigIntegerField(
+        validators=[validate_supported_resource_types], null=True
     )
 
     @property
-    def supported_resource_types(self) -> list[SupportedResourceTypes]:
+    def supported_features(self) -> list[LinkSupportedFeatures]:
         """get the enum representation of int_supported_features"""
+        return LinkSupportedFeatures(self.int_supported_features)
+
+    @supported_features.setter
+    def supported_features(self, new_supported_features: LinkSupportedFeatures):
+        """set int_authorized_capabilities without caring its int"""
+        self.int_supported_features = new_supported_features.value
+
+    @property
+    def supported_resource_types(self) -> list[SupportedResourceTypes]:
+        """get the enum representation of int_supported_resource_types"""
         return SupportedResourceTypes(self.int_supported_resource_types)
 
     @supported_resource_types.setter

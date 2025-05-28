@@ -8,7 +8,10 @@ from addon_service.external_service.computing.models import ComputingSupportedFe
 from addon_service.external_service.storage.models import StorageSupportedFeatures
 
 from ..external_service.citation.models import CitationSupportedFeatures
-from ..external_service.link.models import SupportedResourceTypes
+from ..external_service.link.models import (
+    LinkSupportedFeatures,
+    SupportedResourceTypes,
+)
 from ._base import GravyvaletModelAdmin
 from .decorators import linked_many_field
 
@@ -66,6 +69,7 @@ class ExternalLinkServiceAdmin(GravyvaletModelAdmin):
         "int_service_type": ServiceTypes,
     }
     enum_multiple_choice_fields = {
+        "int_supported_features": LinkSupportedFeatures,
         "int_supported_resource_types": SupportedResourceTypes,
     }
 
