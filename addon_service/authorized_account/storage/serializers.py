@@ -98,6 +98,7 @@ class GoogleDriveStorageAccountSerializer(AuthorizedStorageAccountSerializer):
 
     def get_oauth_token(self, obj: AuthorizedStorageAccount):
         if self.validated_data.get("serialize_oauth_token"):
+            obj.refresh_oauth_access_token__blocking(force=True)
             refresh_oauth_access_token__celery.apply_async([obj.pk], countdown=300)
             return obj._credentials.decrypted_credentials.access_token
         return None
