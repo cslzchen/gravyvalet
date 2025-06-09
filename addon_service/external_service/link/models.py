@@ -16,9 +16,15 @@ from addon_toolkit.interfaces.link import SupportedResourceTypes
 
 
 class LinkSupportedFeatures(Flag):
+    ADD_UPDATE_FILES = auto()
+    DELETE_FILES = auto()
+    FORKING = auto()
     FORKING_PARTIAL = auto()
+    LOGS = auto()
     LOGS_PARTIAL = auto()
     PERMISSIONS = auto()
+    REGISTERING = auto()
+    FILE_VERSIONS = auto()
 
 
 def validate_supported_features(value):
