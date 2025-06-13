@@ -210,9 +210,11 @@ class ExternalLinkServiceFactory(DjangoModelFactory):
         credentials_format=CredentialsFormats.PERSONAL_ACCESS_TOKEN,
         service_type=ServiceTypes.PUBLIC,
         supported_resource_types=None,
+        supported_features=None,
         *args,
         **kwargs,
     ):
+        from addon_service.external_service.link.models import LinkSupportedFeatures
         from addon_toolkit.interfaces.link import SupportedResourceTypes
 
         api_base_url = ""
@@ -223,11 +225,16 @@ class ExternalLinkServiceFactory(DjangoModelFactory):
             supported_resource_types or SupportedResourceTypes.Other
         )
 
+        supported_features = (
+            supported_features or LinkSupportedFeatures.ADD_UPDATE_FILES
+        )
+
         return super()._create(
             model_class=model_class,
             int_credentials_format=credentials_format.value,
             int_service_type=service_type.value,
             int_supported_resource_types=supported_resource_types.value,
+            int_supported_features=supported_features.value,
             api_base_url=api_base_url,
             *args,
             **kwargs,

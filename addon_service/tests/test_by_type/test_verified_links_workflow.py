@@ -163,10 +163,11 @@ class TestDataverseLinkIntegration(TestCase):
     @patch("addon_service.addon_imp.instantiation.get_link_addon_instance__blocking")
     @patch("app.celery.app.send_task")
     def test_dataverse_url_generation(self, mock_send_task, mock_get_instance):
-        url = "https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/12345"
+        async def mock_build_url(target_id):
+            return "https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/12345"
 
         mock_addon = MagicMock()
-        mock_addon.build_url_for_id = url
+        mock_addon.build_url_for_id = mock_build_url
         mock_get_instance.return_value = mock_addon
 
         addon = _factories.ConfiguredLinkAddonFactory(
