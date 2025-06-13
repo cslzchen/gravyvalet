@@ -94,10 +94,7 @@ class TestConfiguredLinkAddonWithNullFields(TestCase):
         addon.save()
         doi_task_called = False
         for call in self.mock_task.call_args_list:
-            if (
-                call[0][0]
-                == "website.identifiers.tasks.task__update_doi_metadata_with_verified_links"
-            ):
+            if call[0][0] == "website.identifiers.tasks.task__update_verified_links":
                 doi_task_called = True
                 break
 
@@ -138,10 +135,7 @@ class TestConfiguredLinkAddonWithNullFields(TestCase):
 
         doi_task_called = False
         for call in self.mock_task.call_args_list:
-            if (
-                call[0][0]
-                == "website.identifiers.tasks.task__update_doi_metadata_with_verified_links"
-            ):
+            if call[0][0] == "website.identifiers.tasks.task__update_verified_links":
                 doi_task_called = True
                 break
 
@@ -163,10 +157,7 @@ class TestConfiguredLinkAddonWithNullFields(TestCase):
 
         doi_task_called = False
         for call in self.mock_task.call_args_list:
-            if (
-                call[0][0]
-                == "website.identifiers.tasks.task__update_doi_metadata_with_verified_links"
-            ):
+            if call[0][0] == "website.identifiers.tasks.task__update_verified_links":
                 doi_task_called = True
                 break
 
@@ -189,8 +180,7 @@ class TestConfiguredLinkAddonWithNullFields(TestCase):
         doi_called = False
         for call in self.mock_task.call_args_list:
             if (
-                call[0][0]
-                == "website.identifiers.tasks.task__update_doi_metadata_with_verified_links"
+                call[0][0] == "website.identifiers.tasks.task__update_verified_links"
                 and call[1]["kwargs"]["target_guid"] == self._resource.guid
             ):
                 doi_called = True
@@ -213,8 +203,7 @@ class TestConfiguredLinkAddonWithNullFields(TestCase):
         doi_called = False
         for call in self.mock_task.call_args_list:
             if (
-                call[0][0]
-                == "website.identifiers.tasks.task__update_doi_metadata_with_verified_links"
+                call[0][0] == "website.identifiers.tasks.task__update_verified_links"
                 and call[1]["kwargs"]["target_guid"] == self._resource.guid
             ):
                 doi_called = True
