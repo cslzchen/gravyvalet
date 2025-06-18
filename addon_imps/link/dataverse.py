@@ -16,7 +16,7 @@ from addon_toolkit.interfaces.link import (
 )
 
 
-DATAVERSE_REGEX = re.compile(r"^dataverse/(?P<id>\d*)$")
+DATAVERSE_REGEX = re.compile(r"^dataverse/(?P<id_>.*)$")
 DATASET_REGEX = re.compile(r"^dataset/(?P<persistent_id>.*)$")
 FILE_REGEX = re.compile(r"^file/(?P<persistent_id>.*)$")
 
@@ -29,19 +29,31 @@ class DataverseLinkImp(LinkAddonHttpRequestorImp):
     """
 
     async def build_url_for_id(self, item_id: str) -> str:
-        if match := DATASET_REGEX.match(item_id):
+        if match := DATAVERSE_REGEX.match(item_id):
+            entity_type = "dataverse"
+        elif match := DATASET_REGEX.match(item_id):
             entity_type = "dataset"
         elif match := FILE_REGEX.match(item_id):
             entity_type = "file"
         else:
             raise ValidationError(f"Invalid {item_id=}")
 
-        persistent_id = match["persistent_id"]
+        return self._make_url(entity_type, **match.groupdict())
 
-        return self._make_url(entity_type, persistent_id)
+    def _make_url(
+        self,
+        entity_type: Literal["file", "dataset", "dataverse"],
+        persistent_id: str = None,
+        id_: str = None,
+    ):
+        if bool(id_) == bool(persistent_id):
+            raise ValueError("You must pass either id or persistent_id to build url")
 
-    def _make_url(self, entity_type: Literal["file", "dataset"], persistent_id):
-        return f"{self.config.external_web_url}/{entity_type}.xhtml?persistentId={persistent_id}"
+        if persistent_id:
+            suffix = f".xhtml?persistentId={persistent_id}"
+        else:
+            suffix = f"/{id_}"
+        return f"{self.config.external_web_url}/{entity_type}{suffix}"
 
     async def get_external_account_id(self, _: dict[str, str]) -> str:
         try:
@@ -81,7 +93,7 @@ class DataverseLinkImp(LinkAddonHttpRequestorImp):
         if not item_id:
             return ItemResult(item_id="", item_name="", item_type=ItemType.FOLDER)
         elif match := DATAVERSE_REGEX.match(item_id):
-            entity = await self._fetch_dataverse(match["id"])
+            entity = await self._fetch_dataverse(match["id_"])
         elif match := DATASET_REGEX.match(item_id):
             entity = await self._fetch_dataset(
                 dataset_id=match["id"], persistent_id=match["persistent_id"]
@@ -102,7 +114,7 @@ class DataverseLinkImp(LinkAddonHttpRequestorImp):
         if not item_id:
             return await self.list_root_items(page_cursor)
         elif match := DATAVERSE_REGEX.match(item_id):
-            items = await self._fetch_dataverse_items(match["id"])
+            items = await self._fetch_dataverse_items(match["id_"])
             return ItemSampleResult(
                 items=items,
                 total_count=len(items),
@@ -136,7 +148,7 @@ class DataverseLinkImp(LinkAddonHttpRequestorImp):
             case "dataset":
                 return await self._fetch_dataset(dataset_id=item["id"])
             case "dataverse":
-                return parse_dataverse_as_subitem(item)
+                return await self._fetch_dataverse(item["id"])
         raise ValueError(f"Invalid item type: {item['type']}")
 
     async def _fetch_file(self, dataverse_id) -> ItemResult:
@@ -235,7 +247,7 @@ def parse_dataverse(data: dict):
     return ItemResult(
         item_type=ItemType.FOLDER,
         item_name=data["name"],
-        item_id=f'dataverse/{data["id"]}',
+        item_id=f'dataverse/{data["alias"]}',
     )
 
 
@@ -245,11 +257,11 @@ def parse_mydata(data: dict):
     return ItemSampleResult(
         items=[
             ItemResult(
-                item_id=f"dataverse/{file['entity_id']}",
-                item_name=file["name"],
+                item_id=f"dataverse/{item['identifier']}",
+                item_name=item["name"],
                 item_type=ItemType.FOLDER,
             )
-            for file in data["items"]
+            for item in data["items"]
         ],
         total_count=data["total_count"],
         next_sample_cursor=(
