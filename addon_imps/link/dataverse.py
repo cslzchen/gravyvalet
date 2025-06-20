@@ -95,9 +95,7 @@ class DataverseLinkImp(LinkAddonHttpRequestorImp):
         elif match := DATAVERSE_REGEX.match(item_id):
             entity = await self._fetch_dataverse(match["id_"])
         elif match := DATASET_REGEX.match(item_id):
-            entity = await self._fetch_dataset(
-                dataset_id=match["id"], persistent_id=match["persistent_id"]
-            )
+            entity = await self._fetch_dataset(persistent_id=match["persistent_id"])
         elif match := FILE_REGEX.match(item_id):
             entity = await self._fetch_file(match["persistent_id"])
         else:
