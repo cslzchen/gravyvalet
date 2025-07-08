@@ -1,0 +1,12 @@
+# Changelog
+
+We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
+
+25.1.0 (2025-07-08)
+====================
+
+- Verified Resource Linking project release - GV
+- GV session optimization
+- GV node log for add-ons
+- GV swagger API
+
