@@ -2,6 +2,11 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+25.2.2 (2025-07-10)
+===================
+
+- Fix branch name for OpenApi schema generation
+
 25.2.1 (2025-07-10)
 ===================
 
