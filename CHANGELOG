@@ -2,8 +2,13 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
-25.1.0 (2025-07-08)
-====================
+25.2.1 (2025-07-10)
+===================
+
+- Add generation of OpenApi schema to CI/CD
+
+25.2.0 (2025-07-08)
+===================
 
 - Verified Resource Linking project release - GV
 - GV session optimization
