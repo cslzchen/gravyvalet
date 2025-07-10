@@ -76,7 +76,7 @@ jobs:
           SECRET_KEY: oh-so-secret
           REDIS_HOST: redis://localhost:6379
       - name: generate-openapi
-        if: github.ref == 'refs/heads/master'
+        if: github.ref == 'refs/heads/main'
         run: poetry run python manage.py migrate && poetry run python manage.py openapi
         env:
           DEBUG: 1
@@ -87,7 +87,7 @@ jobs:
           SECRET_KEY: oh-so-secret
           REDIS_HOST: redis://localhost:6379
       - name: upload-artifact
-        if: github.ref == 'refs/heads/master'
+        if: github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
           path: 'openapi.yml'
